@@ -1,0 +1,8 @@
+include: package:flutter_lints/flutter.yaml
+
+linter:
+  rules:
+    # El código del Manual Técnico usa nombres de estado privados con guion bajo
+    # (_MisPedidosScreenState); se conserva tal cual.
+    library_private_types_in_public_api: false
+    avoid_print: false
