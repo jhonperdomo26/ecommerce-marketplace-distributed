@@ -2,10 +2,14 @@
 
 Corresponde a la **Sección 2** y al **Paso 1** del Manual Técnico.
 
-| Archivo          | Contenido                                                      |
-| ---------------- | ------------------------------------------------------------- |
-| `01_schema.sql`  | Estructura relacional: `tiendas`, `usuarios`, `productos`, `pedidos`, `resenas`. |
-| `02_seed.sql`    | Datos de prueba: 2 tiendas, 1 admin, 2 vendedores, 1 cliente, 1 producto, 1 pedido. |
+| Archivo               | Contenido                                                      |
+| --------------------- | ------------------------------------------------------------- |
+| `01_schema.sql`       | Estructura relacional: `tiendas`, `usuarios`, `productos`, `pedidos`, `resenas` (literal del manual). |
+| `02_seed.sql`         | Datos de prueba: 2 tiendas, 1 admin, 2 vendedores, 1 cliente, 5 productos y 2 pedidos (uno `entregado`). |
+| `03_constraints.sql`  | `UNIQUE (pedido_id)` en `resenas` (una reseña por pedido) e índices. No forma parte del manual. |
+
+Con Docker los tres se ejecutan en orden automáticamente. A mano: ejecútalos en
+orden numérico.
 
 ## Opción A — Docker (recomendada)
 

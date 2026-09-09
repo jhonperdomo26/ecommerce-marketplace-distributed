@@ -8,6 +8,9 @@ import cors from 'cors';
 
 import authRoutes from './routes/auth.routes';
 import pedidosRoutes from './routes/pedidos.routes';
+import productosRoutes from './routes/productos.routes';
+import resenasRoutes from './routes/resenas.routes';
+import adminRoutes from './routes/admin.routes';
 
 const app = express();
 
@@ -21,6 +24,9 @@ app.get('/', (_req, res) => {
 
 app.use('/api/auth', authRoutes);
 app.use('/api/pedidos', pedidosRoutes);
+app.use('/api/productos', productosRoutes);
+app.use('/api/resenas', resenasRoutes);
+app.use('/api/admin', adminRoutes);
 
 const PORT = Number(process.env.PORT) || 3000;
 app.listen(PORT, () => {

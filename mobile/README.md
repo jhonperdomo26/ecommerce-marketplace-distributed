@@ -1,7 +1,8 @@
 # App móvil — Flutter
 
-Pantalla para que el cliente consulte sus pedidos consumiendo la misma API
-central. Corresponde a la **Sección 5** y al **Paso 4** del Manual Técnico.
+App del **cliente**, que consume la misma API central. Corresponde a la
+**Sección 5** y al **Paso 4** del Manual Técnico, ampliada con catálogo, compra y
+reseñas.
 
 ## Requisitos
 
@@ -37,16 +38,23 @@ Valor por defecto: `http://10.0.2.2:3000` (emulador de Android).
 
 ```
 lib/
-├── main.dart                      MaterialApp -> LoginScreen
-├── config.dart                    Config.baseUrl (emulador / dispositivo)
+├── main.dart                          MaterialApp -> LoginScreen
+├── config.dart                        Config.baseUrl (emulador / dispositivo)
+├── sesion.dart                        Sesion.token / Sesion.usuario (en memoria)
+├── api.dart                           Api.get / Api.post con Authorization
 └── screens/
-    ├── login_screen.dart          Login -> obtiene el token de /api/auth/login
-    └── mis_pedidos_screen.dart    Lista de pedidos (literal del Manual Técnico)
+    ├── login_screen.dart              Login -> Sesion -> HomeScreen
+    ├── registro_screen.dart           Alta de cliente (POST /api/auth/registro)
+    ├── home_screen.dart               BottomNavigationBar: Catálogo | Mis Pedidos
+    ├── catalogo_screen.dart           GET /api/productos
+    ├── producto_detalle_screen.dart   Detalle + reseñas + Comprar (POST /api/pedidos)
+    └── mis_pedidos_screen.dart        GET /api/pedidos/mios + Calificar (POST /api/resenas)
 ```
 
 ## Flujo
 
-1. `LoginScreen` (precargado con `cliente@correo.com` / `Password123`) hace
-   `POST /api/auth/login` y obtiene el JWT.
-2. Navega a `MisPedidosScreen(userToken: token)`, que consume
-   `GET /api/pedidos/mios` con `Authorization: Bearer <token>`.
+1. `LoginScreen` (precargado con `cliente@correo.com` / `Password123`, o
+   `RegistroScreen` para una cuenta nueva) obtiene el JWT y lo guarda en `Sesion`.
+2. `HomeScreen` con dos pestañas:
+   - **Catálogo** → tocar un producto → **Comprar** (descuenta stock).
+   - **Mis Pedidos** → sobre un pedido `entregado`, **Calificar** (1–5 ★ + comentario).

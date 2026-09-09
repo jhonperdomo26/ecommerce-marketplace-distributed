@@ -1,7 +1,8 @@
 # Frontend web — React + Vite + Tailwind
 
-Panel del vendedor para visualizar los pedidos de su tienda.
-Corresponde a la **Sección 4** y al **Paso 3** del Manual Técnico.
+Web para los roles **vendedor** y **administrador**. El **cliente** no tiene
+vistas aquí: usa la app móvil. Corresponde a la **Sección 4** y al **Paso 3** del
+Manual Técnico, ampliado con gestión de productos, reseñas y panel de administración.
 
 ## Requisitos
 
@@ -18,22 +19,35 @@ npm run dev
 Abre `http://localhost:5173`. Las peticiones a `/api/...` se redirigen al backend
 mediante el proxy configurado en `vite.config.js` (Manual Técnico, Paso 3, punto 4).
 
-## Flujo
+## Rutas
 
-1. `/login` — formulario de inicio de sesión. Viene precargado con el vendedor de
-   prueba `vendedor1@tutienda.com` / `Password123`. Al entrar, guarda el JWT en
-   `localStorage` bajo la clave `token`.
-2. `/pedidos` — `PanelPedidos` (código literal del manual). Consume
-   `GET /api/pedidos/por-tienda` con la cabecera `Authorization: Bearer <token>`.
+| Ruta         | Acceso        | Contenido |
+| ------------ | ------------- | --------- |
+| `/login`     | público       | Inicio de sesión. Guarda `token` y `usuario` en `localStorage`. |
+| `/registro`  | público       | Auto-registro de clientes (`POST /api/auth/registro`). |
+| `/pedidos`   | vendedor      | `PanelPedidos` (base del manual) + cambio de estado por fila. |
+| `/productos` | vendedor      | Alta / edición / borrado de los productos de su tienda. |
+| `/resenas`   | vendedor      | Reseñas de los productos de su tienda. |
+| `/admin`     | administrador | Conteos globales + alta de tiendas y usuarios + activar/desactivar. |
+
+Tras el login se redirige según el rol (vendedor → `/pedidos`,
+administrador → `/admin`).
 
 ## Estructura
 
 ```
 src/
 ├── main.jsx                     Punto de entrada + BrowserRouter
-├── App.jsx                      Rutas /login y /pedidos (ruta protegida)
+├── App.jsx                      Rutas con guarda por rol (RutaProtegida)
 ├── index.css                    Directivas de Tailwind
-├── api.js                       getToken / setToken / apiFetch
-├── pages/Login.jsx              Formulario de inicio de sesión
-└── components/PanelPedidos.jsx  Tabla de pedidos (literal del Manual Técnico)
+├── api.js                       token/usuario en localStorage + apiFetch / apiJson
+├── components/
+│   ├── Layout.jsx               Barra de navegación según rol + "Salir"
+│   └── PanelPedidos.jsx         Tabla de pedidos (base del manual) + cambio de estado
+└── pages/
+    ├── Login.jsx                Inicio de sesión
+    ├── Registro.jsx             Alta de clientes
+    ├── Productos.jsx            CRUD de productos del vendedor
+    ├── Resenas.jsx              Reseñas de los productos del vendedor
+    └── Admin.jsx                Panel de administración
 ```

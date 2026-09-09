@@ -1,6 +1,7 @@
 // Helper mínimo para consumir la API central.
 // El token se guarda en localStorage bajo la clave 'token'
 // (misma convención que usa el componente PanelPedidos del Manual Técnico).
+// El objeto 'usuario' (con su rol) se guarda para el ruteo por rol.
 
 export function getToken() {
   return localStorage.getItem('token');
@@ -10,8 +11,27 @@ export function setToken(token) {
   localStorage.setItem('token', token);
 }
 
-export function clearToken() {
+export function setUsuario(usuario) {
+  localStorage.setItem('usuario', JSON.stringify(usuario));
+}
+
+export function getUsuario() {
+  try {
+    return JSON.parse(localStorage.getItem('usuario'));
+  } catch {
+    return null;
+  }
+}
+
+export function logout() {
   localStorage.removeItem('token');
+  localStorage.removeItem('usuario');
+}
+
+// Guarda token + usuario a partir de la respuesta de /login o /registro.
+export function guardarSesion({ token, usuario }) {
+  setToken(token);
+  setUsuario(usuario);
 }
 
 // fetch con cabecera Authorization: Bearer <token> ya incluida.
@@ -26,4 +46,15 @@ export async function apiFetch(path, options = {}) {
     },
   });
   return res;
+}
+
+// Igual que apiFetch pero devuelve el JSON y lanza Error con el mensaje del
+// backend si la respuesta no es 2xx.
+export async function apiJson(path, options = {}) {
+  const res = await apiFetch(path, options);
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(data.mensaje || `Error ${res.status}`);
+  }
+  return data;
 }

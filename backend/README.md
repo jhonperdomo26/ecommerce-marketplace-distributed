@@ -39,22 +39,42 @@ src/
 ├── middleware/
 │   └── auth.ts                  verificarToken(rolesPermitidos) — RBAC (literal del manual)
 ├── controllers/
-│   ├── auth.controller.ts       login: valida credenciales y firma el JWT
-│   └── pedidos.controller.ts    actualizarEstadoPedido (literal del manual) + listarPorTienda + listarMios
+│   ├── auth.controller.ts       login + registro (bcrypt, firma JWT)
+│   ├── pedidos.controller.ts    actualizarEstadoPedido (literal del manual) + listarPorTienda + listarMios + crearPedido
+│   ├── productos.controller.ts  catálogo + CRUD de productos del vendedor
+│   ├── resenas.controller.ts    crear/consultar reseñas
+│   └── admin.controller.ts      tiendas, usuarios y conteos globales
 └── routes/
-    ├── auth.routes.ts           POST /api/auth/login
-    └── pedidos.routes.ts        GET /por-tienda, GET /mios, PATCH /estado
+    ├── auth.routes.ts           POST /login, POST /registro
+    ├── pedidos.routes.ts        GET /por-tienda, GET /mios, POST /, PATCH /estado
+    ├── productos.routes.ts      GET /, GET /mios, POST /, PUT /:id, DELETE /:id
+    ├── resenas.routes.ts        POST /, GET /producto/:id, GET /mis-productos
+    └── admin.routes.ts          GET/POST /tiendas, GET/POST /usuarios, PATCH /usuarios/:id/activo, GET /resumen
 ```
 
 ## Endpoints
 
-| Método | Ruta                       | Rol requerido | Descripción                                    |
-| ------ | -------------------------- | ------------- | --------------------------------------------- |
-| `GET`  | `/`                        | —             | Sonda de salud.                               |
-| `POST` | `/api/auth/login`          | —             | Devuelve `{ token, usuario }`.                |
-| `GET`  | `/api/pedidos/por-tienda`  | `vendedor`    | Pedidos de la tienda del token (panel web).   |
-| `GET`  | `/api/pedidos/mios`        | `cliente`     | Pedidos del cliente del token (app móvil).    |
-| `PATCH`| `/api/pedidos/estado`      | `vendedor`    | `{ pedido_id, estado }`. Valida la tienda.    |
+| Método | Ruta | Rol | Descripción |
+| ------ | ---- | --- | ----------- |
+| `GET`  | `/`                              | —             | Sonda de salud. |
+| `POST` | `/api/auth/login`                | —             | Devuelve `{ token, usuario }`. |
+| `POST` | `/api/auth/registro`             | —             | Alta de `cliente`. Devuelve `{ token, usuario }`. |
+| `GET`  | `/api/productos`                 | autenticado   | Catálogo (`?tienda_id=` opcional). |
+| `GET`  | `/api/productos/mios`            | `vendedor`    | Productos de la tienda del token. |
+| `POST` | `/api/productos`                 | `vendedor`    | `{ nombre, sku, precio, stock }`. |
+| `PUT`  | `/api/productos/:id`             | `vendedor`    | Edita un producto de la propia tienda. |
+| `DELETE` | `/api/productos/:id`           | `vendedor`    | Elimina un producto de la propia tienda. |
+| `GET`  | `/api/pedidos/por-tienda`        | `vendedor`    | Pedidos de la tienda del token (panel web). |
+| `GET`  | `/api/pedidos/mios`              | `cliente`     | Pedidos del cliente del token (app móvil). |
+| `POST` | `/api/pedidos`                   | `cliente`     | `{ producto_id, cantidad }`. Valida y descuenta stock (transacción). |
+| `PATCH`| `/api/pedidos/estado`            | `vendedor`    | `{ pedido_id, estado }`. Valida la tienda. |
+| `POST` | `/api/resenas`                   | `cliente`     | `{ pedido_id, calificacion, comentario }`. Pedido propio y `entregado`. |
+| `GET`  | `/api/resenas/producto/:id`      | autenticado   | Reseñas de un producto. |
+| `GET`  | `/api/resenas/mis-productos`     | `vendedor`    | Reseñas de los productos de su tienda. |
+| `GET`  | `/api/admin/resumen`             | `administrador` | Conteos globales. |
+| `GET` · `POST` | `/api/admin/tiendas`     | `administrador` | Lista / crea tiendas. |
+| `GET` · `POST` | `/api/admin/usuarios`    | `administrador` | Lista / crea `vendedor`/`administrador`. |
+| `PATCH`| `/api/admin/usuarios/:id/activo` | `administrador` | `{ activo: boolean }`. |
 
 El `tienda_id` y el `usuario_id` se leen **siempre** de la firma del token, nunca
 del cuerpo de la petición (garantía de aislamiento entre tiendas del manual).

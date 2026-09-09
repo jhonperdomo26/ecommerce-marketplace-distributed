@@ -21,6 +21,7 @@ services:
       # Los scripts se ejecutan en orden alfabético SOLO al inicializar el volumen.
       - ./database/01_schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
       - ./database/02_seed.sql:/docker-entrypoint-initdb.d/02_seed.sql:ro
+      - ./database/03_constraints.sql:/docker-entrypoint-initdb.d/03_constraints.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d comercio_electronico"]
       interval: 5s

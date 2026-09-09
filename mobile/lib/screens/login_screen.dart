@@ -1,13 +1,12 @@
 // lib/screens/login_screen.dart
-// Pantalla de inicio de sesión mínima: obtiene el JWT de /api/auth/login y
-// navega a MisPedidosScreen pasando el token (Manual Técnico, Paso 5.1, punto 3,
-// que en el manual se hace instanciando la pantalla con el token a mano).
+// Inicio de sesión: obtiene el JWT de /api/auth/login, lo guarda en Sesion y
+// entra a HomeScreen (Catálogo + Mis Pedidos).
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 
-import '../config.dart';
-import 'mis_pedidos_screen.dart';
+import '../api.dart';
+import '../sesion.dart';
+import 'home_screen.dart';
+import 'registro_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -28,25 +27,17 @@ class _LoginScreenState extends State<LoginScreen> {
       _error = null;
     });
     try {
-      final response = await http.post(
-        Uri.parse('${Config.baseUrl}/api/auth/login'),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode({
-          'email': _emailCtrl.text.trim(),
-          'password': _passCtrl.text,
-        }),
+      final data = await Api.post('/api/auth/login', {
+        'email': _emailCtrl.text.trim(),
+        'password': _passCtrl.text,
+      });
+      Sesion.iniciar(data['token'], Map<String, dynamic>.from(data['usuario']));
+      if (!mounted) return;
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const HomeScreen()),
       );
-      final data = json.decode(response.body);
-      if (response.statusCode == 200) {
-        if (!mounted) return;
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (_) => MisPedidosScreen(userToken: data['token']),
-          ),
-        );
-      } else {
-        setState(() => _error = data['mensaje'] ?? 'No fue posible iniciar sesión.');
-      }
+    } on ApiException catch (e) {
+      setState(() => _error = e.mensaje);
     } catch (e) {
       setState(() => _error = 'Error de conexión con la API: $e');
     } finally {
@@ -96,6 +87,15 @@ class _LoginScreenState extends State<LoginScreen> {
                 onPressed: _cargando ? null : _login,
                 child: Text(_cargando ? 'Entrando...' : 'Entrar'),
               ),
+            ),
+            TextButton(
+              onPressed: _cargando
+                  ? null
+                  : () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                            builder: (_) => const RegistroScreen()),
+                      ),
+              child: const Text('¿Cliente nuevo? Crear cuenta'),
             ),
           ],
         ),

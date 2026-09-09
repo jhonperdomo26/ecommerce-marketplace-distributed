@@ -40,9 +40,9 @@ Autores: Juan Andrés Vidarte Dussan · Jhon Jairo Perdomo Perdomo · Julián An
 
 | Carpeta       | Contenido                                                           |
 | ------------- | ---------------------------------------------------------------- |
-| `database/`   | `01_schema.sql`, `02_seed.sql` y guía de la base de datos.       |
-| `backend/`    | API RESTful (Sección 3 y Paso 2 del manual).                     |
-| `frontend/`   | Panel web del vendedor (Sección 4 y Paso 3).                     |
+| `database/`   | `01_schema.sql`, `02_seed.sql`, `03_constraints.sql` y guía de la BD. |
+| `backend/`    | API RESTful (Sección 3 y Paso 2 del manual) + endpoints de negocio.  |
+| `frontend/`   | Web de vendedor y administrador (Sección 4 y Paso 3).            |
 | `mobile/`     | App del cliente en Flutter (Sección 5 y Paso 4).                 |
 | `docs/`       | Copia del Manual Técnico original.                               |
 | `docker-compose.yml` | PostgreSQL + pgAdmin para desarrollo local.               |
@@ -91,8 +91,10 @@ npm install
 npm run dev
 ```
 
-Web en `http://localhost:5173`. Inicia sesión con `vendedor1@tutienda.com` /
-`Password123`.
+Web en `http://localhost:5173`. Inicia sesión como **vendedor**
+(`vendedor1@tutienda.com` / `Password123`) para gestionar productos, pedidos y
+ver reseñas, o como **administrador** (`admin@tutienda.com`) para el panel de
+tiendas y usuarios. El **cliente** no tiene vistas en web: usa la app móvil.
 
 ### 4. App móvil
 
@@ -104,7 +106,19 @@ flutter run
 ```
 
 Ajusta `lib/config.dart` según el emulador/dispositivo. Inicia sesión con
-`cliente@correo.com` / `Password123`.
+`cliente@correo.com` / `Password123` (o crea una cuenta nueva). Desde la app el
+cliente **navega el catálogo, compra** y, sobre los pedidos `entregado`,
+**deja una reseña**.
+
+## Funcionalidades
+
+| Módulo | Funciones |
+| ------ | --------- |
+| **Autenticación** | Login (todos los roles) y auto-registro de clientes (web y app). |
+| **Cliente (app móvil)** | Catálogo de productos, compra (descuenta stock), "Mis pedidos" y reseñas de pedidos entregados. |
+| **Vendedor (web)** | CRUD de productos de su tienda, panel de pedidos con cambio de estado, y reseñas de sus productos. |
+| **Administrador (web)** | Conteos globales, alta de tiendas y alta/activación de usuarios `vendedor`/`administrador`. |
+| **Seguridad** | RBAC por rol + aislamiento multi-tienda: `tienda_id`/`usuario_id` siempre desde el token. |
 
 ## Usuarios de prueba
 
@@ -119,13 +133,18 @@ Todos con contraseña **`Password123`** (ver `database/02_seed.sql`).
 
 ## Estado / pendientes
 
-Esta entrega implementa el código de las Secciones 2–5 y la guía de los Pasos 1–4
-del manual. **Falta implementar el Paso 5 (Pruebas de Integración y Validación):**
+Implementados: el código de las Secciones 2–5 y la guía de los Pasos 1–4 del
+manual, más las funcionalidades de negocio de la tabla anterior (catálogo,
+compra, registro, panel de administrador, reseñas y cambio de estado de pedidos).
+
+**Falta el Paso 5 del manual (Pruebas de Integración y Validación):**
 
 - [ ] **5.1** Prueba de humo end-to-end (login → web → móvil).
 - [ ] **5.2** Prueba crítica de aislamiento entre tiendas (multi-tenancy):
-      un vendedor de la Tienda 2 no debe poder modificar un pedido de la Tienda 1
-      (respuesta esperada `403`).
+      un vendedor de la Tienda 2 no debe poder modificar un pedido/producto de la
+      Tienda 1 (respuesta esperada `403`).
 - [ ] **5.3** Pruebas automatizadas: unitarias (Jest + Supertest) sobre
-      `verificarToken` y `actualizarEstadoPedido`, pruebas de las restricciones
-      `CHECK` de la BD y prueba de carga (k6 / JMeter) sobre la creación de pedidos.
+      `verificarToken`, `actualizarEstadoPedido`, `crearPedido` (incluido el caso
+      de stock insuficiente) y `crearResena`; pruebas de las restricciones
+      `CHECK`/`UNIQUE` de la BD y prueba de carga (k6 / JMeter) sobre la creación
+      de pedidos.

@@ -76,7 +76,8 @@ export const listarPorTienda = async (
 };
 
 // GET /api/pedidos/mios  (app móvil del cliente, Manual Técnico Sección 5)
-// Devuelve los pedidos del cliente autenticado.
+// Devuelve los pedidos del cliente autenticado. Incluye si ya tiene reseña,
+// para que la app sepa cuándo ofrecer el botón "Calificar".
 export const listarMios = async (
   req: AuthRequest,
   res: Response
@@ -87,9 +88,12 @@ export const listarMios = async (
               ped.cantidad,
               ped.estado,
               ped.fecha_pedido,
-              prod.nombre AS producto_nombre
+              ped.producto_id,
+              prod.nombre AS producto_nombre,
+              (r.id IS NOT NULL) AS tiene_resena
        FROM pedidos ped
        JOIN productos prod ON ped.producto_id = prod.id
+       LEFT JOIN resenas r ON r.pedido_id = ped.id
        WHERE ped.cliente_id = $1
        ORDER BY ped.fecha_pedido DESC`,
       [req.usuario_id]
@@ -97,5 +101,67 @@ export const listarMios = async (
     res.status(200).json(resultado.rows);
   } catch (error) {
     res.status(500).json({ mensaje: 'Error interno del servidor', error });
+  }
+};
+
+// POST /api/pedidos  (compra desde la app móvil del cliente)
+// Cuerpo: { producto_id, cantidad }. Valida stock, lo descuenta y crea el pedido
+// dentro de una transacción para evitar condiciones de carrera.
+export const crearPedido = async (
+  req: AuthRequest,
+  res: Response
+): Promise<void> => {
+  const { producto_id, cantidad } = req.body;
+
+  if (!producto_id || !cantidad || Number(cantidad) <= 0) {
+    res
+      .status(400)
+      .json({ mensaje: 'producto_id y una cantidad mayor a 0 son obligatorios.' });
+    return;
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    // FOR UPDATE bloquea la fila del producto hasta el COMMIT.
+    const prod = await client.query(
+      `SELECT id, stock FROM productos WHERE id = $1 FOR UPDATE`,
+      [producto_id]
+    );
+    if (prod.rows.length === 0) {
+      await client.query('ROLLBACK');
+      res.status(404).json({ mensaje: 'El producto no existe.' });
+      return;
+    }
+    if (prod.rows[0].stock < Number(cantidad)) {
+      await client.query('ROLLBACK');
+      res.status(409).json({
+        mensaje: `Stock insuficiente. Disponible: ${prod.rows[0].stock}.`,
+      });
+      return;
+    }
+
+    await client.query(
+      `UPDATE productos SET stock = stock - $1 WHERE id = $2`,
+      [cantidad, producto_id]
+    );
+    const pedido = await client.query(
+      `INSERT INTO pedidos (cliente_id, producto_id, cantidad, estado)
+       VALUES ($1, $2, $3, 'pendiente')
+       RETURNING *`,
+      [req.usuario_id, producto_id, cantidad]
+    );
+
+    await client.query('COMMIT');
+    res.status(201).json({
+      mensaje: 'Pedido creado con éxito',
+      datos: pedido.rows[0],
+    });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    res.status(500).json({ mensaje: 'Error interno del servidor', error });
+  } finally {
+    client.release();
   }
 };

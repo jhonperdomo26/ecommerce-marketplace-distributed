@@ -1,10 +1,15 @@
 // src/pages/Login.jsx
-// Pantalla de inicio de sesión mínima. Equivale a lo que el Manual Técnico
-// (Paso 5.1, punto 2) hace a mano por la consola del navegador:
-// obtener un JWT y guardarlo en localStorage bajo la clave 'token'.
+// Pantalla de inicio de sesión. Guarda el JWT y el usuario (con su rol) en
+// localStorage y redirige según el rol.
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { setToken } from '../api';
+import { Link, useNavigate } from 'react-router-dom';
+import { guardarSesion } from '../api';
+
+const rutaInicioPorRol = {
+  vendedor: '/pedidos',
+  administrador: '/admin',
+  cliente: '/login', // el cliente usa la app móvil; en web no tiene vistas propias
+};
 
 export default function Login() {
   const navigate = useNavigate();
@@ -28,8 +33,14 @@ export default function Login() {
         setError(data.mensaje || 'No fue posible iniciar sesión.');
         return;
       }
-      setToken(data.token);
-      navigate('/pedidos');
+      guardarSesion(data);
+      if (data.usuario.rol === 'cliente') {
+        setError(
+          'Este usuario es un cliente. La vista de cliente está en la app móvil.'
+        );
+        return;
+      }
+      navigate(rutaInicioPorRol[data.usuario.rol] || '/login');
     } catch (err) {
       setError('Error de conexión con la API.');
     } finally {
@@ -77,8 +88,15 @@ export default function Login() {
           {cargando ? 'Entrando...' : 'Entrar'}
         </button>
 
-        <p className="text-xs text-gray-500 mt-4">
-          Usuario de prueba precargado: vendedor de la Tienda 1.
+        <p className="text-sm text-gray-600 mt-4">
+          ¿Eres cliente nuevo?{' '}
+          <Link to="/registro" className="text-blue-600 hover:underline">
+            Crear cuenta
+          </Link>
+        </p>
+        <p className="text-xs text-gray-500 mt-2">
+          Prueba: vendedor1@tutienda.com / Password123 (vendedor) ·
+          admin@tutienda.com (administrador)
         </p>
       </form>
     </div>
