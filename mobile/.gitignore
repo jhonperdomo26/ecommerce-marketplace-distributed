@@ -18,3 +18,8 @@ pubspec.lock
 .idea/
 *.iml
 .vscode/
+
+# Pruebas: se implementan en la siguiente entrega (Paso 5 del manual).
+# El widget_test.dart por defecto de `flutter create` referencia MyApp y no
+# corresponde a esta app.
+/test/
