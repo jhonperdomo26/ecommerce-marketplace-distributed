@@ -131,20 +131,23 @@ Todos con contraseña **`Password123`** (ver `database/02_seed.sql`).
 | `vendedor2@tutienda.com`  | vendedor      | 2         |
 | `cliente@correo.com`      | cliente       | —         |
 
-## Estado / pendientes
+## Estado
 
 Implementados: el código de las Secciones 2–5 y la guía de los Pasos 1–4 del
-manual, más las funcionalidades de negocio de la tabla anterior (catálogo,
-compra, registro, panel de administrador, reseñas y cambio de estado de pedidos).
+manual, las funcionalidades de negocio de la tabla anterior (catálogo, compra,
+registro, panel de administrador, reseñas y cambio de estado de pedidos) y el
+**Punto 5.3** (pruebas automatizadas y de carga).
 
-**Falta el Paso 5 del manual (Pruebas de Integración y Validación):**
+- [x] **5.3** Suite **Jest + Supertest** (`backend/test/`, `cd backend && npm test`):
+      `verificarToken`, `actualizarEstadoPedido` con el **caso 5.2** como prueba
+      permanente, `crearPedido` (incl. stock insuficiente → rollback), `crearResena`
+      y pruebas de las restricciones `CHECK`/`UNIQUE` de la BD. **30 pruebas.**
+      Prueba de **carga con k6** sobre `POST /api/pedidos`
+      (`backend/load/`, ver [`backend/load/README.md`](backend/load/README.md)).
+- [ ] **5.1 / 5.2** El manual las plantea como verificación **manual** (Postman +
+      navegador + emulador). El fondo de la 5.2 ya queda cubierto de forma
+      automática dentro de 5.3; falta, si se quiere, dejarlas escritas como guion
+      de prueba manual.
 
-- [ ] **5.1** Prueba de humo end-to-end (login → web → móvil).
-- [ ] **5.2** Prueba crítica de aislamiento entre tiendas (multi-tenancy):
-      un vendedor de la Tienda 2 no debe poder modificar un pedido/producto de la
-      Tienda 1 (respuesta esperada `403`).
-- [ ] **5.3** Pruebas automatizadas: unitarias (Jest + Supertest) sobre
-      `verificarToken`, `actualizarEstadoPedido`, `crearPedido` (incluido el caso
-      de stock insuficiente) y `crearResena`; pruebas de las restricciones
-      `CHECK`/`UNIQUE` de la BD y prueba de carga (k6 / JMeter) sobre la creación
-      de pedidos.
+Pendiente opcional: pruebas de widget en la app Flutter (el manual solo pide
+Jest/Supertest en el backend para 5.3).

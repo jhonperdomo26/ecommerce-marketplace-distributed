@@ -28,13 +28,42 @@ El servidor queda escuchando en `http://localhost:3000` e imprime esa URL.
 | `npm run dev`       | Arranca en modo desarrollo con recarga (`ts-node-dev`). |
 | `npm run build`     | Compila TypeScript a `dist/`.                           |
 | `npm start`         | Ejecuta la versión compilada (`node dist/index.js`).    |
+| `npm test`          | Suite Jest + Supertest (ver "Pruebas" abajo).           |
 | `npm run seed:hash` | Genera un `password_hash` bcrypt. Uso: `npm run seed:hash -- "MiClave"`. |
+
+## Pruebas (Manual Técnico, Punto 5.3)
+
+- **`app.ts`** construye la app Express sin abrir el puerto; `index.ts` solo hace
+  `listen`. Así Supertest prueba la app sin levantar el servidor.
+- **`npm test`** ejecuta la suite (`test/*.test.ts`). Necesita **PostgreSQL
+  corriendo** (`docker compose up -d` desde la raíz): crea y destruye una BD
+  aparte `comercio_electronico_test` (`test/globalSetup.js` aplica
+  `01_schema.sql` + `03_constraints.sql`).
+
+| Archivo | Cubre |
+| ------- | ----- |
+| `test/auth.test.ts` | `verificarToken` (sin token→403, firma inválida→400, rol no permitido→401, ok→200) y `login`. |
+| `test/pedidos.test.ts` | **Caso 5.2** (vendedor de otra tienda→403) + happy path; `crearPedido` descuenta stock y hace rollback si no alcanza (→409). |
+| `test/resenas.test.ts` | Solo pedidos propios y `entregado`, una reseña por pedido. |
+| `test/productos.test.ts` | Catálogo requiere token; aislamiento por tienda en edición; SKU largo→400. |
+| `test/db-constraints.test.ts` | Los `CHECK` (`stock>=0`, `precio>=0`, `cantidad>0`, `estado`, `calificacion` 1–5, `rol`) y los `UNIQUE` (`email`, `sku`, `resenas.pedido_id`) rechazan datos inválidos. |
+
+### Prueba de carga
+
+`load/pedidos-load.js` (k6) contra `POST /api/pedidos`. Ver
+[`load/README.md`](load/README.md). Resumen:
+
+```bash
+docker run --rm -i -e BASE_URL=http://host.docker.internal:3000 \
+  -v "${PWD}/load:/load" grafana/k6 run /load/pedidos-load.js
+```
 
 ## Estructura
 
 ```
 src/
-├── index.ts                     Express + CORS + montaje de rutas + listen
+├── app.ts                       Construye la app Express (rutas + middlewares), sin listen
+├── index.ts                     Importa app y abre el puerto
 ├── db.ts                        Pool de PostgreSQL (variables de entorno)
 ├── middleware/
 │   └── auth.ts                  verificarToken(rolesPermitidos) — RBAC (literal del manual)

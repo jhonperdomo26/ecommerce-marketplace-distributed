@@ -86,6 +86,12 @@ export const crearProducto = async (
       res.status(409).json({ mensaje: 'Ya existe un producto con ese SKU.' });
       return;
     }
+    if (error?.code === '22001') {
+      res
+        .status(400)
+        .json({ mensaje: 'Algún campo excede la longitud permitida (SKU máx. 20).' });
+      return;
+    }
     res.status(500).json({ mensaje: 'Error interno del servidor', error });
   }
 };
@@ -127,6 +133,12 @@ export const actualizarProducto = async (
   } catch (error: any) {
     if (error?.code === '23505') {
       res.status(409).json({ mensaje: 'Ya existe un producto con ese SKU.' });
+      return;
+    }
+    if (error?.code === '22001') {
+      res
+        .status(400)
+        .json({ mensaje: 'Algún campo excede la longitud permitida (SKU máx. 20).' });
       return;
     }
     res.status(500).json({ mensaje: 'Error interno del servidor', error });
