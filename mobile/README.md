@@ -58,3 +58,16 @@ lib/
 2. `HomeScreen` con dos pestañas:
    - **Catálogo** → tocar un producto → **Comprar** (descuenta stock).
    - **Mis Pedidos** → sobre un pedido `entregado`, **Calificar** (1–5 ★ + comentario).
+
+## Prueba de integración
+
+`integration_test/mis_pedidos_test.dart` es la versión automatizada de la
+"Prueba móvil (Flutter)" del Manual Técnico (Paso 5.1, punto 3): monta
+`MisPedidosScreen` con un token real y verifica que el indicador de carga
+desaparece (no "gira indefinidamente") y que la lista se renderiza.
+
+Necesita el backend en `http://localhost:3000` y la BD con datos semilla:
+
+```bash
+flutter test integration_test/mis_pedidos_test.dart -d windows
+```

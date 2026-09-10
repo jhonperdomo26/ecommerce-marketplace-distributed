@@ -93,31 +93,54 @@ class _MisPedidosScreenState extends State<MisPedidosScreen> {
                 return Card(
                   margin:
                       const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
-                  child: ListTile(
-                    title: Text(pedido['producto_nombre'],
-                        style: const TextStyle(fontWeight: FontWeight.bold)),
-                    subtitle: Text('Cantidad: ${pedido['cantidad']}'),
-                    trailing: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.end,
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Row(
                       children: [
-                        Text(
-                          pedido['estado'],
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: entregado ? Colors.green : Colors.orange,
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(pedido['producto_nombre'],
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.bold)),
+                              const SizedBox(height: 4),
+                              Text('Cantidad: ${pedido['cantidad']}',
+                                  style: const TextStyle(color: Colors.grey)),
+                            ],
                           ),
                         ),
-                        if (entregado && !tieneResena)
-                          TextButton(
-                            onPressed: () => _calificar(pedido),
-                            child: const Text('Calificar'),
-                          ),
-                        if (entregado && tieneResena)
-                          const Text('Reseñada',
+                        const SizedBox(width: 12),
+                        Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              pedido['estado'],
                               style: TextStyle(
-                                  fontSize: 11, color: Colors.grey)),
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                color:
+                                    entregado ? Colors.green : Colors.orange,
+                              ),
+                            ),
+                            if (entregado && !tieneResena)
+                              TextButton(
+                                onPressed: () => _calificar(pedido),
+                                style: TextButton.styleFrom(
+                                  padding: EdgeInsets.zero,
+                                  minimumSize: const Size(0, 32),
+                                  tapTargetSize:
+                                      MaterialTapTargetSize.shrinkWrap,
+                                ),
+                                child: const Text('Calificar'),
+                              ),
+                            if (entregado && tieneResena)
+                              const Text('Reseñada',
+                                  style: TextStyle(
+                                      fontSize: 11, color: Colors.grey)),
+                          ],
+                        ),
                       ],
                     ),
                   ),

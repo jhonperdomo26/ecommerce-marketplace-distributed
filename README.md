@@ -144,10 +144,12 @@ registro, panel de administrador, reseñas y cambio de estado de pedidos) y el
       y pruebas de las restricciones `CHECK`/`UNIQUE` de la BD. **30 pruebas.**
       Prueba de **carga con k6** sobre `POST /api/pedidos`
       (`backend/load/`, ver [`backend/load/README.md`](backend/load/README.md)).
-- [ ] **5.1 / 5.2** El manual las plantea como verificación **manual** (Postman +
-      navegador + emulador). El fondo de la 5.2 ya queda cubierto de forma
-      automática dentro de 5.3; falta, si se quiere, dejarlas escritas como guion
-      de prueba manual.
-
-Pendiente opcional: pruebas de widget en la app Flutter (el manual solo pide
-Jest/Supertest en el backend para 5.3).
+- [x] **Prueba móvil (Flutter)** del Paso 5.1: automatizada en
+      `mobile/integration_test/mis_pedidos_test.dart`
+      (`flutter test integration_test/mis_pedidos_test.dart -d windows`). Monta
+      `MisPedidosScreen` con un token real y comprueba que el indicador de carga
+      no gira indefinidamente.
+- [ ] **5.1 (web) / 5.2** El manual las plantea como verificación **manual**
+      (Postman + navegador). El fondo de la 5.2 ya queda cubierto de forma
+      automática dentro de 5.3 (`test/pedidos.test.ts`); falta, si se quiere,
+      dejarlas escritas como guion de prueba manual.
