@@ -4,6 +4,7 @@
 import { Response } from 'express';
 import { AuthRequest } from '../middleware/auth';
 import { pool } from '../db';
+import { enviarErrorInterno } from '../utils/errores';
 
 // POST /api/resenas  (cliente)
 // Cuerpo: { pedido_id, calificacion (1.0-5.0), comentario }
@@ -55,7 +56,7 @@ export const crearResena = async (
       res.status(409).json({ mensaje: 'Este pedido ya tiene una reseña.' });
       return;
     }
-    res.status(500).json({ mensaje: 'Error interno del servidor', error });
+    enviarErrorInterno(res, error);
   }
 };
 
@@ -80,7 +81,7 @@ export const listarPorProducto = async (
     );
     res.status(200).json(resultado.rows);
   } catch (error) {
-    res.status(500).json({ mensaje: 'Error interno del servidor', error });
+    enviarErrorInterno(res, error);
   }
 };
 
@@ -108,6 +109,6 @@ export const listarDeMisProductos = async (
     );
     res.status(200).json(resultado.rows);
   } catch (error) {
-    res.status(500).json({ mensaje: 'Error interno del servidor', error });
+    enviarErrorInterno(res, error);
   }
 };

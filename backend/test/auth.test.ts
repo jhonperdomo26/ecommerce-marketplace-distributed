@@ -59,7 +59,9 @@ describe('verificarToken (RBAC)', () => {
       .get(RUTA_PROTEGIDA)
       .set('Authorization', `Bearer ${token}`);
     expect(res.status).toBe(200);
-    expect(Array.isArray(res.body)).toBe(true);
+    // Paginado (práctica de validación y pruebas, Módulo 2 - usabilidad):
+    // ya no devuelve un arreglo plano, sino { datos, total, pagina, totalPaginas }.
+    expect(Array.isArray(res.body.datos)).toBe(true);
   });
 });
 

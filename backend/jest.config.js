@@ -7,6 +7,6 @@ module.exports = {
   // Crea/borra la base de datos comercio_electronico_test una sola vez.
   globalSetup: '<rootDir>/test/globalSetup.js',
   globalTeardown: '<rootDir>/test/globalTeardown.js',
-  testMatch: ['<rootDir>/test/**/*.test.ts'],
+  testMatch: ['**/test/**/*.test.ts'],
   clearMocks: true,
 };

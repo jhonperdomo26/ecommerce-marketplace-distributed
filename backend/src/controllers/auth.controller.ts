@@ -7,6 +7,7 @@ import { Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { pool } from '../db';
+import { enviarErrorInterno } from '../utils/errores';
 
 const SALT_ROUNDS = 10;
 
@@ -64,7 +65,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       },
     });
   } catch (error) {
-    res.status(500).json({ mensaje: 'Error interno del servidor', error });
+    enviarErrorInterno(res, error);
   }
 };
 
@@ -103,6 +104,6 @@ export const registro = async (req: Request, res: Response): Promise<void> => {
       res.status(409).json({ mensaje: 'Ya existe un usuario con ese email.' });
       return;
     }
-    res.status(500).json({ mensaje: 'Error interno del servidor', error });
+    enviarErrorInterno(res, error);
   }
 };

@@ -5,6 +5,7 @@ import { Response } from 'express';
 import bcrypt from 'bcrypt';
 import { AuthRequest } from '../middleware/auth';
 import { pool } from '../db';
+import { enviarErrorInterno } from '../utils/errores';
 
 const SALT_ROUNDS = 10;
 
@@ -20,7 +21,7 @@ export const resumen = async (_req: AuthRequest, res: Response): Promise<void> =
     `);
     res.status(200).json(q.rows[0]);
   } catch (error) {
-    res.status(500).json({ mensaje: 'Error interno del servidor', error });
+    enviarErrorInterno(res, error);
   }
 };
 
@@ -35,7 +36,7 @@ export const listarTiendas = async (
     );
     res.status(200).json(q.rows);
   } catch (error) {
-    res.status(500).json({ mensaje: 'Error interno del servidor', error });
+    enviarErrorInterno(res, error);
   }
 };
 
@@ -57,7 +58,7 @@ export const crearTienda = async (
     );
     res.status(201).json(q.rows[0]);
   } catch (error) {
-    res.status(500).json({ mensaje: 'Error interno del servidor', error });
+    enviarErrorInterno(res, error);
   }
 };
 
@@ -76,7 +77,7 @@ export const listarUsuarios = async (
     );
     res.status(200).json(q.rows);
   } catch (error) {
-    res.status(500).json({ mensaje: 'Error interno del servidor', error });
+    enviarErrorInterno(res, error);
   }
 };
 
@@ -125,7 +126,7 @@ export const crearUsuario = async (
       res.status(400).json({ mensaje: 'La tienda indicada no existe.' });
       return;
     }
-    res.status(500).json({ mensaje: 'Error interno del servidor', error });
+    enviarErrorInterno(res, error);
   }
 };
 
@@ -158,6 +159,6 @@ export const cambiarActivoUsuario = async (
     }
     res.status(200).json(q.rows[0]);
   } catch (error) {
-    res.status(500).json({ mensaje: 'Error interno del servidor', error });
+    enviarErrorInterno(res, error);
   }
 };

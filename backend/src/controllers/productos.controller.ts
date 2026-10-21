@@ -5,6 +5,7 @@
 import { Response } from 'express';
 import { AuthRequest } from '../middleware/auth';
 import { pool } from '../db';
+import { enviarErrorInterno } from '../utils/errores';
 
 // GET /api/productos            -> catálogo completo (cualquier usuario autenticado)
 // GET /api/productos?tienda_id= -> catálogo filtrado por tienda
@@ -30,7 +31,7 @@ export const listarCatalogo = async (
     );
     res.status(200).json(resultado.rows);
   } catch (error) {
-    res.status(500).json({ mensaje: 'Error interno del servidor', error });
+    enviarErrorInterno(res, error);
   }
 };
 
@@ -49,7 +50,7 @@ export const listarMisProductos = async (
     );
     res.status(200).json(resultado.rows);
   } catch (error) {
-    res.status(500).json({ mensaje: 'Error interno del servidor', error });
+    enviarErrorInterno(res, error);
   }
 };
 
@@ -92,7 +93,7 @@ export const crearProducto = async (
         .json({ mensaje: 'Algún campo excede la longitud permitida (SKU máx. 20).' });
       return;
     }
-    res.status(500).json({ mensaje: 'Error interno del servidor', error });
+    enviarErrorInterno(res, error);
   }
 };
 
@@ -141,7 +142,7 @@ export const actualizarProducto = async (
         .json({ mensaje: 'Algún campo excede la longitud permitida (SKU máx. 20).' });
       return;
     }
-    res.status(500).json({ mensaje: 'Error interno del servidor', error });
+    enviarErrorInterno(res, error);
   }
 };
 
@@ -175,6 +176,6 @@ export const eliminarProducto = async (
       });
       return;
     }
-    res.status(500).json({ mensaje: 'Error interno del servidor', error });
+    enviarErrorInterno(res, error);
   }
 };
