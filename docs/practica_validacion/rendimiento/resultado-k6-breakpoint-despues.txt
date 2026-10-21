@@ -1,0 +1,40 @@
+running (1m30.2s), 110/900 VUs, 26255 complete and 0 interrupted iterations
+default   [  98% ] 110/900 VUs  1m27.8s/1m30.0s
+
+running (1m31.2s), 064/900 VUs, 26554 complete and 0 interrupted iterations
+default   [  99% ] 064/900 VUs  1m28.8s/1m30.0s
+
+running (1m32.2s), 019/900 VUs, 26711 complete and 0 interrupted iterations
+default   [ 100% ] 019/900 VUs  1m29.8s/1m30.0s
+
+
+  █ TOTAL RESULTS 
+
+    checks_total.......: 26735   288.556917/s
+    checks_succeeded...: 100.00% 26735 out of 26735
+    checks_failed......: 0.00%   0 out of 26735
+
+    ✓ producto creado
+    ✓ pedido creado (201)
+
+    HTTP
+    http_req_duration..............: avg=1.39s min=4.44ms   med=1.5s  max=4.83s p(90)=2.41s p(95)=2.67s
+      { expected_response:true }...: avg=1.39s min=4.44ms   med=1.5s  max=4.83s p(90)=2.41s p(95)=2.67s
+    http_req_failed................: 0.00% 0 out of 26737
+    http_reqs......................: 26737 288.578504/s
+
+    EXECUTION
+    iteration_duration.............: avg=1.65s min=304.83ms med=1.74s max=4.99s p(90)=2.69s p(95)=2.82s
+    iterations.....................: 26734 288.546124/s
+    vus............................: 19    min=12         max=898
+    vus_max........................: 900   min=900        max=900
+
+    NETWORK
+    data_received..................: 30 MB 321 kB/s
+    data_sent......................: 10 MB 110 kB/s
+
+
+
+
+running (1m32.7s), 000/900 VUs, 26734 complete and 0 interrupted iterations
+default ✓ [ 100% ] 000/900 VUs  1m30s

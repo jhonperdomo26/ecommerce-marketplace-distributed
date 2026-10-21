@@ -3,6 +3,7 @@
 import { Response } from 'express';
 import { AuthRequest } from '../middleware/auth';
 import { pool } from '../db';
+import { enviarErrorInterno } from '../utils/errores';
 
 // --- actualizarEstadoPedido: código literal del Manual Técnico (Sección 3) ---
 export const actualizarEstadoPedido = async (
@@ -41,7 +42,7 @@ export const actualizarEstadoPedido = async (
       datos: pedidoActualizado.rows[0],
     });
   } catch (error) {
-    res.status(500).json({ mensaje: 'Error interno del servidor', error });
+    enviarErrorInterno(res, error);
   }
 };
 
@@ -50,28 +51,51 @@ export const actualizarEstadoPedido = async (
 // GET /api/pedidos/por-tienda  (panel de vendedor, Manual Técnico Sección 4)
 // Devuelve los pedidos cuyos productos pertenecen a la tienda del vendedor
 // autenticado. El tienda_id se toma del token, nunca del cliente.
+// Paginado (?page=&limit=, por defecto 1 y 20): con miles de pedidos la tabla
+// sin límite tardaba varios segundos en renderizar en el panel (hallazgo de
+// usabilidad de la práctica de validación y pruebas, Módulo 2).
 export const listarPorTienda = async (
   req: AuthRequest,
   res: Response
 ): Promise<void> => {
   try {
-    const resultado = await pool.query(
-      `SELECT ped.id,
-              ped.cantidad,
-              ped.estado,
-              ped.fecha_pedido,
-              cli.nombre  AS cliente_nombre,
-              prod.nombre AS producto_nombre
-       FROM pedidos ped
-       JOIN productos prod ON ped.producto_id = prod.id
-       JOIN usuarios  cli  ON ped.cliente_id  = cli.id
-       WHERE prod.tienda_id = $1
-       ORDER BY ped.fecha_pedido DESC`,
-      [req.tienda_id]
-    );
-    res.status(200).json(resultado.rows);
+    const pagina = Math.max(1, Number(req.query.page) || 1);
+    const limite = Math.min(100, Math.max(1, Number(req.query.limit) || 20));
+    const offset = (pagina - 1) * limite;
+
+    const [resultado, conteo] = await Promise.all([
+      pool.query(
+        `SELECT ped.id,
+                ped.cantidad,
+                ped.estado,
+                ped.fecha_pedido,
+                cli.nombre  AS cliente_nombre,
+                prod.nombre AS producto_nombre
+         FROM pedidos ped
+         JOIN productos prod ON ped.producto_id = prod.id
+         JOIN usuarios  cli  ON ped.cliente_id  = cli.id
+         WHERE prod.tienda_id = $1
+         ORDER BY ped.fecha_pedido DESC
+         LIMIT $2 OFFSET $3`,
+        [req.tienda_id, limite, offset]
+      ),
+      pool.query(
+        `SELECT COUNT(*) FROM pedidos ped
+         JOIN productos prod ON ped.producto_id = prod.id
+         WHERE prod.tienda_id = $1`,
+        [req.tienda_id]
+      ),
+    ]);
+
+    const total = Number(conteo.rows[0].count);
+    res.status(200).json({
+      datos: resultado.rows,
+      total,
+      pagina,
+      totalPaginas: Math.max(1, Math.ceil(total / limite)),
+    });
   } catch (error) {
-    res.status(500).json({ mensaje: 'Error interno del servidor', error });
+    enviarErrorInterno(res, error);
   }
 };
 
@@ -100,7 +124,7 @@ export const listarMios = async (
     );
     res.status(200).json(resultado.rows);
   } catch (error) {
-    res.status(500).json({ mensaje: 'Error interno del servidor', error });
+    enviarErrorInterno(res, error);
   }
 };
 
@@ -160,7 +184,7 @@ export const crearPedido = async (
     });
   } catch (error) {
     await client.query('ROLLBACK');
-    res.status(500).json({ mensaje: 'Error interno del servidor', error });
+    enviarErrorInterno(res, error);
   } finally {
     client.release();
   }

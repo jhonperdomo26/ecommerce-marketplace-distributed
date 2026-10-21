@@ -18,19 +18,29 @@ const colorEstado = {
 
 export default function PanelPedidos() {
   const [pedidos, setPedidos] = useState([]);
+  const [pagina, setPagina] = useState(1);
+  const [totalPaginas, setTotalPaginas] = useState(1);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [guardando, setGuardando] = useState(null); // id del pedido en curso
 
-  const cargar = () => {
-    apiJson('/api/pedidos/por-tienda')
-      .then((data) => setPedidos(data))
+  const cargar = (pag = pagina) => {
+    setLoading(true);
+    apiJson(`/api/pedidos/por-tienda?page=${pag}&limit=20`)
+      .then((data) => {
+        setPedidos(data.datos);
+        setTotalPaginas(data.totalPaginas);
+        setTotal(data.total);
+        setPagina(data.pagina);
+      })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
   };
 
   useEffect(() => {
-    cargar();
+    cargar(1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const cambiarEstado = async (pedido_id, estado) => {
@@ -129,6 +139,30 @@ export default function PanelPedidos() {
           </tbody>
         </table>
       </div>
+
+      {total > 0 && (
+        <div className="flex items-center justify-between mt-4 text-sm text-gray-600">
+          <span>
+            Página {pagina} de {totalPaginas} · {total} pedidos en total
+          </span>
+          <div className="space-x-2">
+            <button
+              onClick={() => cargar(pagina - 1)}
+              disabled={pagina <= 1 || loading}
+              className="px-3 py-1 border rounded disabled:opacity-40"
+            >
+              Anterior
+            </button>
+            <button
+              onClick={() => cargar(pagina + 1)}
+              disabled={pagina >= totalPaginas || loading}
+              className="px-3 py-1 border rounded disabled:opacity-40"
+            >
+              Siguiente
+            </button>
+          </div>
+        </div>
+      )}
     </Layout>
   );
 }

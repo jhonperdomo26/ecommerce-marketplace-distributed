@@ -1,0 +1,60 @@
+
+running (1m23.1s), 423/900 VUs, 14599 complete and 0 interrupted iterations
+default   [  91% ] 423/900 VUs  1m21.6s/1m30.0s
+
+running (1m24.1s), 394/900 VUs, 14722 complete and 0 interrupted iterations
+default   [  92% ] 394/900 VUs  1m22.6s/1m30.0s
+
+running (1m25.1s), 366/900 VUs, 14830 complete and 0 interrupted iterations
+default   [  93% ] 366/900 VUs  1m23.6s/1m30.0s
+
+running (1m26.7s), 306/900 VUs, 14997 complete and 0 interrupted iterations
+default   [  94% ] 306/900 VUs  1m24.6s/1m30.0s
+
+running (1m27.7s), 275/900 VUs, 15072 complete and 0 interrupted iterations
+default   [  95% ] 275/900 VUs  1m25.6s/1m30.0s
+
+running (1m28.7s), 198/900 VUs, 15244 complete and 0 interrupted iterations
+default   [  96% ] 198/900 VUs  1m26.6s/1m30.0s
+
+running (1m29.7s), 134/900 VUs, 15429 complete and 0 interrupted iterations
+default   [  97% ] 134/900 VUs  1m27.6s/1m30.0s
+
+running (1m30.7s), 071/900 VUs, 15636 complete and 0 interrupted iterations
+default   [  98% ] 071/900 VUs  1m28.6s/1m30.0s
+
+running (1m31.7s), 027/900 VUs, 15799 complete and 0 interrupted iterations
+default   [ 100% ] 027/900 VUs  1m29.6s/1m30.0s
+
+
+  █ TOTAL RESULTS 
+
+    checks_total.......: 15835  171.669699/s
+    checks_succeeded...: 96.00% 15202 out of 15835
+    checks_failed......: 3.99%  633 out of 15835
+
+    ✓ producto creado
+    ✗ pedido creado (201)
+      ↳  96% — ✓ 15201 / ✗ 633
+
+    HTTP
+    http_req_duration..............: avg=2.52s min=5.3ms    med=2.18s max=10.63s p(90)=4.25s p(95)=5.61s
+      { expected_response:true }...: avg=2.21s min=5.3ms    med=2.11s max=10.52s p(90)=3.97s p(95)=4.44s
+    http_req_failed................: 3.99%  633 out of 15837
+    http_reqs......................: 15837  171.691381/s
+
+    EXECUTION
+    iteration_duration.............: avg=2.83s min=305.91ms med=2.48s max=10.56s p(90)=4.7s  p(95)=6.79s
+    iterations.....................: 15834  171.658857/s
+    vus............................: 27     min=10           max=900
+    vus_max........................: 900    min=900          max=900
+
+    NETWORK
+    data_received..................: 6.7 MB 72 kB/s
+    data_sent......................: 6.0 MB 65 kB/s
+
+
+
+
+running (1m32.2s), 000/900 VUs, 15834 complete and 0 interrupted iterations
+default ✓ [ 100% ] 000/900 VUs  1m30s

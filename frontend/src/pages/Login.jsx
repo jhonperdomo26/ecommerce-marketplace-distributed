@@ -13,8 +13,8 @@ const rutaInicioPorRol = {
 
 export default function Login() {
   const navigate = useNavigate();
-  const [email, setEmail] = useState('vendedor1@tutienda.com');
-  const [password, setPassword] = useState('Password123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [cargando, setCargando] = useState(false);
 

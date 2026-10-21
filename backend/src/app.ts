@@ -5,6 +5,8 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 
 import authRoutes from './routes/auth.routes';
 import pedidosRoutes from './routes/pedidos.routes';
@@ -14,8 +16,28 @@ import adminRoutes from './routes/admin.routes';
 
 export const app = express();
 
-app.use(cors());
+// Cabeceras de seguridad (CSP, X-Content-Type-Options, oculta X-Powered-By,
+// etc.) y origen CORS restringido al frontend conocido: hallazgos del
+// escaneo OWASP ZAP de la práctica de validación y pruebas.
+app.use(helmet());
+app.use(
+  cors({
+    origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+  })
+);
 app.use(express.json());
+
+// Límite de intentos en el login (mitiga fuerza bruta de credenciales):
+// 10 intentos cada 15 min por IP, hallazgo de la práctica de validación y
+// pruebas (10 intentos fallidos consecutivos no eran bloqueados).
+const limitadorLogin = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { mensaje: 'Demasiados intentos. Intenta de nuevo más tarde.' },
+});
+app.use('/api/auth/login', limitadorLogin);
 
 // Sonda de salud
 app.get('/', (_req, res) => {
