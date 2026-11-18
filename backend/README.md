@@ -46,6 +46,8 @@ El servidor queda escuchando en `http://localhost:3000` e imprime esa URL.
 | `test/pedidos.test.ts` | **Caso 5.2** (vendedor de otra tienda→403) + happy path; `crearPedido` descuenta stock y hace rollback si no alcanza (→409). |
 | `test/resenas.test.ts` | Solo pedidos propios y `entregado`, una reseña por pedido. |
 | `test/productos.test.ts` | Catálogo requiere token; aislamiento por tienda en edición; SKU largo→400. |
+| `test/chat.motor.test.ts` | Motor del asistente sin BD: intención por rol, extracción de pedido y términos, respuestas con datos simulados. |
+| `test/chat.test.ts` | `POST /api/chat` con BD: autenticación, validación, aislamiento entre clientes y entre tiendas, inyección SQL. |
 | `test/db-constraints.test.ts` | Los `CHECK` (`stock>=0`, `precio>=0`, `cantidad>0`, `estado`, `calificacion` 1–5, `rol`) y los `UNIQUE` (`email`, `sku`, `resenas.pedido_id`) rechazan datos inválidos. |
 
 ### Prueba de carga
@@ -64,24 +66,37 @@ docker run --rm -i -e BASE_URL=http://host.docker.internal:3000 \
 src/
 ├── app.ts                       Construye la app Express (rutas + middlewares), sin listen
 ├── index.ts                     Importa app y abre el puerto
-├── db.ts                        Pool de PostgreSQL (variables de entorno)
+├── config.ts                    Secreto y algoritmo del JWT (validados al arrancar)
+├── db.ts                        DataSource de TypeORM (variables de entorno, synchronize: false)
+├── entidades/                   Entidades TypeORM: Tienda, Usuario, Producto, Pedido, Resena
+├── docs/openapi.ts              Especificación OpenAPI 3 (Swagger UI en /api/docs)
+├── servicios/notificaciones.ts  Correos al cliente por SMTP (Nodemailer; Mailpit en pruebas)
+├── utils/                       Validadores de entrada, errores 500 y ayuda para QueryBuilder
 ├── middleware/
 │   └── auth.ts                  verificarToken(rolesPermitidos) — RBAC (literal del manual)
+├── chat/
+│   ├── tipos.ts                 Tipos y contrato ChatDatos del asistente virtual
+│   ├── motor.ts                 Motor de reglas (intenciones por rol, sin Express ni pg)
+│   └── datos.ts                 ChatDatos con TypeORM (consultas con identidad del token)
 ├── controllers/
 │   ├── auth.controller.ts       login + registro (bcrypt, firma JWT)
 │   ├── pedidos.controller.ts    actualizarEstadoPedido (literal del manual) + listarPorTienda + listarMios + crearPedido
 │   ├── productos.controller.ts  catálogo + CRUD de productos del vendedor
 │   ├── resenas.controller.ts    crear/consultar reseñas
-│   └── admin.controller.ts      tiendas, usuarios y conteos globales
+│   ├── admin.controller.ts      tiendas, usuarios y conteos globales
+│   └── chat.controller.ts       POST /api/chat: valida el mensaje y llama al motor
 └── routes/
     ├── auth.routes.ts           POST /login, POST /registro
     ├── pedidos.routes.ts        GET /por-tienda, GET /mios, POST /, PATCH /estado
     ├── productos.routes.ts      GET /, GET /mios, POST /, PUT /:id, DELETE /:id
     ├── resenas.routes.ts        POST /, GET /producto/:id, GET /mis-productos
-    └── admin.routes.ts          GET/POST /tiendas, GET/POST /usuarios, PATCH /usuarios/:id/activo, GET /resumen
+    ├── admin.routes.ts          GET/POST /tiendas, GET/POST /usuarios, PATCH /usuarios/:id/activo, GET /resumen
+    └── chat.routes.ts           POST / (límite de 60 mensajes/min por IP)
 ```
 
 ## Endpoints
+
+La referencia completa e interactiva está en **`/api/docs`** (Swagger) con la API en marcha.
 
 | Método | Ruta | Rol | Descripción |
 | ------ | ---- | --- | ----------- |
@@ -100,6 +115,7 @@ src/
 | `POST` | `/api/resenas`                   | `cliente`     | `{ pedido_id, calificacion, comentario }`. Pedido propio y `entregado`. |
 | `GET`  | `/api/resenas/producto/:id`      | autenticado   | Reseñas de un producto. |
 | `GET`  | `/api/resenas/mis-productos`     | `vendedor`    | Reseñas de los productos de su tienda. |
+| `POST` | `/api/chat`                      | autenticado   | Asistente virtual: `{ mensaje }` → `{ respuesta, intencion, opciones }`. Ver [`../docs/Fase3_Chatbot.md`](../docs/Fase3_Chatbot.md). |
 | `GET`  | `/api/admin/resumen`             | `administrador` | Conteos globales. |
 | `GET` · `POST` | `/api/admin/tiendas`     | `administrador` | Lista / crea tiendas. |
 | `GET` · `POST` | `/api/admin/usuarios`    | `administrador` | Lista / crea `vendedor`/`administrador`. |

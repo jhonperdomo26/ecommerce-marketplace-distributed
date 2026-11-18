@@ -118,6 +118,7 @@ cliente **navega el catálogo, compra** y, sobre los pedidos `entregado`,
 | **Cliente (app móvil)** | Catálogo de productos, compra (descuenta stock), "Mis pedidos" y reseñas de pedidos entregados. |
 | **Vendedor (web)** | CRUD de productos de su tienda, panel de pedidos con cambio de estado, y reseñas de sus productos. |
 | **Administrador (web)** | Conteos globales, alta de tiendas y alta/activación de usuarios `vendedor`/`administrador`. |
+| **Asistente virtual (Fase 3)** | Chat por reglas: estado de pedidos, búsqueda de productos y preguntas frecuentes (cliente, app móvil); pedidos por estado, stock bajo y reseñas (vendedor, web); resumen del sistema (administrador, web). Ver [`docs/Fase3_Chatbot.md`](docs/Fase3_Chatbot.md). |
 | **Seguridad** | RBAC por rol + aislamiento multi-tienda: `tienda_id`/`usuario_id` siempre desde el token. |
 
 ## Usuarios de prueba
@@ -149,6 +150,17 @@ registro, panel de administrador, reseñas y cambio de estado de pedidos) y el
       (`flutter test integration_test/mis_pedidos_test.dart -d windows`). Monta
       `MisPedidosScreen` con un token real y comprueba que el indicador de carga
       no gira indefinidamente.
+- [x] **Fase 3 — Asistente virtual**: `POST /api/chat` (motor de reglas en
+      `backend/src/chat/`), widget en la web (`ChatWidget.jsx`) y pestaña
+      «Asistente» en la app móvil. Documentación: [`docs/Fase3_Chatbot.md`](docs/Fase3_Chatbot.md).
+- [x] **Fase 4 — Aseguramiento de calidad (web)**: suite de rendimiento k6 (REN-01…06), suite de seguridad
+      OWASP en Jest, evaluación heurística y mitigaciones. Ver [`docs/Fase4_Calidad.md`](docs/Fase4_Calidad.md).
+- **Entregables de todas las fases:** índice en [`docs/README.md`](docs/README.md).
+- [x] **Fase 2 — Núcleo (completado)**: persistencia con **TypeORM** (`backend/src/entidades`, `backend/src/db.ts`),
+      documentación **Swagger/OpenAPI** en `/api/docs` y servicio externo de **notificaciones por correo**
+      (`backend/src/servicios/notificaciones.ts`, Mailpit en el despliegue).
+- [x] **Fase 5 — Despliegue y validación final (web)**: `docker-compose.prod.yml`, Dockerfiles y suite E2E
+      (`backend/e2e`, 33 pruebas). Ver [`docs/Fase5_Despliegue.md`](docs/Fase5_Despliegue.md).
 - [ ] **5.1 (web) / 5.2** El manual las plantea como verificación **manual**
       (Postman + navegador). El fondo de la 5.2 ya queda cubierto de forma
       automática dentro de 5.3 (`test/pedidos.test.ts`); falta, si se quiere,

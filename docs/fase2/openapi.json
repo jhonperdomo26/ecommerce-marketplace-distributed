@@ -1,0 +1,2093 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "API Plataforma de Comercio Electrónico",
+    "version": "1.0.0",
+    "description": "API REST del marketplace multi-tienda. Roles: **cliente**, **vendedor** (solo su tienda) y **administrador**.\n\nPara probar desde esta página: ejecute `POST /api/auth/login` (por ejemplo `vendedor1@tutienda.com` / `Password123` con la semilla de demostración), copie el `token` y péguelo en **Authorize**.\n\nEl rol, la tienda y el estado activo se leen de la base en cada petición: desactivar a un usuario corta su acceso de inmediato aunque su token no haya vencido."
+  },
+  "servers": [
+    {
+      "url": "/",
+      "description": "Este mismo servidor (API directa o detrás de nginx)"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Autenticación"
+    },
+    {
+      "name": "Productos"
+    },
+    {
+      "name": "Pedidos"
+    },
+    {
+      "name": "Reseñas"
+    },
+    {
+      "name": "Administración"
+    },
+    {
+      "name": "Asistente virtual"
+    },
+    {
+      "name": "Salud"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "mensaje": {
+            "type": "string",
+            "example": "Token inválido o expirado."
+          }
+        },
+        "required": [
+          "mensaje"
+        ]
+      },
+      "Rol": {
+        "type": "string",
+        "enum": [
+          "cliente",
+          "vendedor",
+          "administrador"
+        ]
+      },
+      "EstadoPedido": {
+        "type": "string",
+        "enum": [
+          "pendiente",
+          "pagado",
+          "enviado",
+          "entregado",
+          "cancelado"
+        ]
+      },
+      "UsuarioSesion": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 2
+          },
+          "nombre": {
+            "type": "string",
+            "example": "Vendedor Uno"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "vendedor1@tutienda.com"
+          },
+          "rol": {
+            "$ref": "#/components/schemas/Rol"
+          },
+          "tienda_id": {
+            "type": "integer",
+            "nullable": true,
+            "example": 1
+          }
+        }
+      },
+      "Sesion": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "description": "JWT HS256, vence en 8 h"
+          },
+          "usuario": {
+            "$ref": "#/components/schemas/UsuarioSesion"
+          }
+        }
+      },
+      "ProductoCatalogo": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "sku": {
+            "type": "string"
+          },
+          "precio": {
+            "type": "string",
+            "description": "NUMERIC(10,2) serializado como texto",
+            "example": "149900.00"
+          },
+          "stock": {
+            "type": "integer"
+          },
+          "tienda_id": {
+            "type": "integer"
+          },
+          "tienda_nombre": {
+            "type": "string"
+          }
+        }
+      },
+      "Producto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "sku": {
+            "type": "string"
+          },
+          "precio": {
+            "type": "string",
+            "example": "149900.00"
+          },
+          "stock": {
+            "type": "integer"
+          },
+          "tienda_id": {
+            "type": "integer"
+          },
+          "vendedor_id": {
+            "type": "integer"
+          }
+        }
+      },
+      "ProductoEntrada": {
+        "type": "object",
+        "required": [
+          "nombre",
+          "sku",
+          "precio"
+        ],
+        "properties": {
+          "nombre": {
+            "type": "string",
+            "maxLength": 100,
+            "example": "Teclado mecánico"
+          },
+          "sku": {
+            "type": "string",
+            "maxLength": 20,
+            "description": "Único en todo el sistema",
+            "example": "SKU-TEC-002"
+          },
+          "precio": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 99999999.99,
+            "example": 149900
+          },
+          "stock": {
+            "type": "integer",
+            "minimum": 0,
+            "default": 0,
+            "example": 10
+          }
+        }
+      },
+      "Pedido": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "cliente_id": {
+            "type": "integer"
+          },
+          "producto_id": {
+            "type": "integer"
+          },
+          "cantidad": {
+            "type": "integer"
+          },
+          "estado": {
+            "$ref": "#/components/schemas/EstadoPedido"
+          },
+          "fecha_pedido": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "PedidoTienda": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "cantidad": {
+            "type": "integer"
+          },
+          "estado": {
+            "$ref": "#/components/schemas/EstadoPedido"
+          },
+          "fecha_pedido": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "cliente_nombre": {
+            "type": "string"
+          },
+          "producto_nombre": {
+            "type": "string"
+          }
+        }
+      },
+      "PedidoCliente": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "cantidad": {
+            "type": "integer"
+          },
+          "estado": {
+            "$ref": "#/components/schemas/EstadoPedido"
+          },
+          "fecha_pedido": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "producto_id": {
+            "type": "integer"
+          },
+          "producto_nombre": {
+            "type": "string"
+          },
+          "tiene_resena": {
+            "type": "boolean"
+          }
+        }
+      },
+      "PedidoRespuesta": {
+        "type": "object",
+        "properties": {
+          "mensaje": {
+            "type": "string"
+          },
+          "datos": {
+            "$ref": "#/components/schemas/Pedido"
+          }
+        }
+      },
+      "Resena": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "pedido_id": {
+            "type": "integer"
+          },
+          "calificacion": {
+            "type": "string",
+            "example": "4.5"
+          },
+          "comentario": {
+            "type": "string",
+            "nullable": true
+          },
+          "fecha_registro": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ResenaListado": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "calificacion": {
+            "type": "string",
+            "example": "4.5"
+          },
+          "comentario": {
+            "type": "string",
+            "nullable": true
+          },
+          "fecha_registro": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "producto_nombre": {
+            "type": "string",
+            "description": "Solo en /mis-productos"
+          },
+          "cliente_nombre": {
+            "type": "string"
+          }
+        }
+      },
+      "Tienda": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "direccion": {
+            "type": "string",
+            "nullable": true
+          },
+          "creado_en": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Usuario": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "rol": {
+            "$ref": "#/components/schemas/Rol"
+          },
+          "tienda_id": {
+            "type": "integer",
+            "nullable": true
+          },
+          "activo": {
+            "type": "boolean"
+          },
+          "tienda_nombre": {
+            "type": "string",
+            "nullable": true,
+            "description": "Solo en el listado"
+          }
+        }
+      },
+      "Resumen": {
+        "type": "object",
+        "description": "Conteos globales (PostgreSQL los devuelve como texto)",
+        "properties": {
+          "tiendas": {
+            "type": "string",
+            "example": "2"
+          },
+          "usuarios": {
+            "type": "string",
+            "example": "4"
+          },
+          "productos": {
+            "type": "string",
+            "example": "5"
+          },
+          "pedidos": {
+            "type": "string",
+            "example": "3"
+          }
+        }
+      },
+      "RespuestaChat": {
+        "type": "object",
+        "properties": {
+          "intencion": {
+            "type": "string",
+            "example": "stock_bajo"
+          },
+          "respuesta": {
+            "type": "string"
+          },
+          "opciones": {
+            "type": "array",
+            "description": "Sugerencias para continuar (botones en la interfaz)",
+            "items": {
+              "type": "object",
+              "properties": {
+                "texto": {
+                  "type": "string"
+                },
+                "valor": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/": {
+      "get": {
+        "tags": [
+          "Salud"
+        ],
+        "summary": "Sonda de salud",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "La API está en marcha",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "servicio": {
+                      "type": "string"
+                    },
+                    "estado": {
+                      "type": "string",
+                      "example": "ok"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "tags": [
+          "Autenticación"
+        ],
+        "summary": "Iniciar sesión",
+        "description": "Límite: `LOGIN_RATE_LIMIT` intentos por IP cada 15 min (10 por defecto).",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email",
+                  "password"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "vendedor1@tutienda.com"
+                  },
+                  "password": {
+                    "type": "string",
+                    "format": "password",
+                    "example": "Password123"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Sesión iniciada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Sesion"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Faltan email o password",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Credenciales inválidas o usuario desactivado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Demasiados intentos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/registro": {
+      "post": {
+        "tags": [
+          "Autenticación"
+        ],
+        "summary": "Crear una cuenta de cliente",
+        "description": "Siempre crea un **cliente**: los campos `rol`, `tienda_id` o `activo` se ignoran. Límite: `REGISTRO_RATE_LIMIT` altas por IP por hora (20 por defecto).",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "nombre",
+                  "email",
+                  "password"
+                ],
+                "properties": {
+                  "nombre": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "example": "Ana Pérez"
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "maxLength": 150,
+                    "example": "ana@correo.com"
+                  },
+                  "password": {
+                    "type": "string",
+                    "format": "password",
+                    "minLength": 8,
+                    "description": "De 8 a 72 bytes y distinta del correo",
+                    "example": "ClaveSegura123"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Cuenta creada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Sesion"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ya existe un usuario con ese email",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Demasiados registros desde esta dirección",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/productos": {
+      "get": {
+        "tags": [
+          "Productos"
+        ],
+        "summary": "Catálogo de todas las tiendas",
+        "description": "Cualquier usuario autenticado.",
+        "parameters": [
+          {
+            "name": "tienda_id",
+            "in": "query",
+            "required": false,
+            "description": "Filtra por tienda",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Productos ordenados por nombre",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ProductoCatalogo"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos, o token mal formado o expirado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Usuario desactivado o inexistente, o rol sin permiso para esta ruta",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Falta el token, o el recurso pertenece a otra tienda",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Productos"
+        ],
+        "summary": "Crear un producto en la tienda del vendedor",
+        "description": "Rol: vendedor.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProductoEntrada"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Producto creado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Producto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos, o token mal formado o expirado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Usuario desactivado o inexistente, o rol sin permiso para esta ruta",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Falta el token, o el recurso pertenece a otra tienda",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ya existe un producto con ese SKU",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/productos/mios": {
+      "get": {
+        "tags": [
+          "Productos"
+        ],
+        "summary": "Productos de la tienda del vendedor",
+        "description": "Rol: vendedor.",
+        "responses": {
+          "200": {
+            "description": "Productos de su tienda",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Producto"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos, o token mal formado o expirado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Usuario desactivado o inexistente, o rol sin permiso para esta ruta",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Falta el token, o el recurso pertenece a otra tienda",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/productos/{id}": {
+      "put": {
+        "tags": [
+          "Productos"
+        ],
+        "summary": "Editar un producto propio",
+        "description": "Rol: vendedor. Solo productos de su tienda.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Id del producto",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProductoEntrada"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Producto actualizado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Producto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos, o token mal formado o expirado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Usuario desactivado o inexistente, o rol sin permiso para esta ruta",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Falta el token, o el recurso pertenece a otra tienda",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "El producto no existe",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ya existe un producto con ese SKU",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Productos"
+        ],
+        "summary": "Eliminar un producto propio",
+        "description": "Rol: vendedor. No se puede eliminar un producto con pedidos.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Id del producto",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Producto eliminado ({\"mensaje\": \"Producto eliminado.\"})",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos, o token mal formado o expirado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Usuario desactivado o inexistente, o rol sin permiso para esta ruta",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Falta el token, o el recurso pertenece a otra tienda",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "El producto no existe",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "El producto tiene pedidos asociados",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/pedidos": {
+      "post": {
+        "tags": [
+          "Pedidos"
+        ],
+        "summary": "Comprar un producto",
+        "description": "Rol: cliente. En una transacción bloquea la fila del producto, comprueba y descuenta el stock y crea el pedido en estado `pendiente`.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "producto_id",
+                  "cantidad"
+                ],
+                "properties": {
+                  "producto_id": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "example": 1
+                  },
+                  "cantidad": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "example": 2
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Pedido creado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PedidoRespuesta"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos, o token mal formado o expirado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Usuario desactivado o inexistente, o rol sin permiso para esta ruta",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Falta el token, o el recurso pertenece a otra tienda",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "El producto no existe",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stock insuficiente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/pedidos/mios": {
+      "get": {
+        "tags": [
+          "Pedidos"
+        ],
+        "summary": "Pedidos del cliente",
+        "description": "Rol: cliente.",
+        "responses": {
+          "200": {
+            "description": "Sus pedidos, del más reciente al más antiguo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PedidoCliente"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos, o token mal formado o expirado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Usuario desactivado o inexistente, o rol sin permiso para esta ruta",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Falta el token, o el recurso pertenece a otra tienda",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/pedidos/por-tienda": {
+      "get": {
+        "tags": [
+          "Pedidos"
+        ],
+        "summary": "Pedidos de la tienda del vendedor (paginado)",
+        "description": "Rol: vendedor.",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          },
+          {
+            "name": "estado",
+            "in": "query",
+            "required": false,
+            "description": "Solo pedidos en este estado",
+            "schema": {
+              "$ref": "#/components/schemas/EstadoPedido"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "description": "Texto en el nombre del cliente o del producto",
+            "schema": {
+              "type": "string",
+              "maxLength": 100
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Una página de pedidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "datos": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/PedidoTienda"
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    },
+                    "pagina": {
+                      "type": "integer"
+                    },
+                    "totalPaginas": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos, o token mal formado o expirado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Usuario desactivado o inexistente, o rol sin permiso para esta ruta",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Falta el token, o el recurso pertenece a otra tienda",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/pedidos/estado": {
+      "patch": {
+        "tags": [
+          "Pedidos"
+        ],
+        "summary": "Cambiar el estado de un pedido de la tienda",
+        "description": "Rol: vendedor. Solo pedidos de productos de su tienda.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "pedido_id",
+                  "estado"
+                ],
+                "properties": {
+                  "pedido_id": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "example": 1
+                  },
+                  "estado": {
+                    "$ref": "#/components/schemas/EstadoPedido"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Estado actualizado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PedidoRespuesta"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos, o token mal formado o expirado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Usuario desactivado o inexistente, o rol sin permiso para esta ruta",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Falta el token, o el recurso pertenece a otra tienda",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "El pedido no existe",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/resenas": {
+      "post": {
+        "tags": [
+          "Reseñas"
+        ],
+        "summary": "Calificar un pedido entregado",
+        "description": "Rol: cliente. Una reseña por pedido, solo si está `entregado`.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "pedido_id",
+                  "calificacion"
+                ],
+                "properties": {
+                  "pedido_id": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "example": 1
+                  },
+                  "calificacion": {
+                    "type": "number",
+                    "minimum": 1,
+                    "maximum": 5,
+                    "example": 4.5
+                  },
+                  "comentario": {
+                    "type": "string",
+                    "maxLength": 300,
+                    "nullable": true,
+                    "example": "Llegó a tiempo"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Reseña creada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Resena"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos, o token mal formado o expirado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Usuario desactivado o inexistente, o rol sin permiso para esta ruta",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Falta el token, o el recurso pertenece a otra tienda",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "El pedido no existe o no es suyo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "El pedido no está entregado o ya tiene reseña",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/resenas/producto/{producto_id}": {
+      "get": {
+        "tags": [
+          "Reseñas"
+        ],
+        "summary": "Reseñas de un producto",
+        "description": "Cualquier usuario autenticado.",
+        "parameters": [
+          {
+            "name": "producto_id",
+            "in": "path",
+            "required": true,
+            "description": "Id del producto",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Reseñas, de la más reciente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ResenaListado"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos, o token mal formado o expirado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Usuario desactivado o inexistente, o rol sin permiso para esta ruta",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Falta el token, o el recurso pertenece a otra tienda",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/resenas/mis-productos": {
+      "get": {
+        "tags": [
+          "Reseñas"
+        ],
+        "summary": "Reseñas de los productos de la tienda",
+        "description": "Rol: vendedor.",
+        "responses": {
+          "200": {
+            "description": "Reseñas de su tienda",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ResenaListado"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos, o token mal formado o expirado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Usuario desactivado o inexistente, o rol sin permiso para esta ruta",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Falta el token, o el recurso pertenece a otra tienda",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/resumen": {
+      "get": {
+        "tags": [
+          "Administración"
+        ],
+        "summary": "Conteos globales del sistema",
+        "description": "Rol: administrador.",
+        "responses": {
+          "200": {
+            "description": "Conteos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Resumen"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos, o token mal formado o expirado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Usuario desactivado o inexistente, o rol sin permiso para esta ruta",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Falta el token, o el recurso pertenece a otra tienda",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/tiendas": {
+      "get": {
+        "tags": [
+          "Administración"
+        ],
+        "summary": "Listar tiendas",
+        "description": "Rol: administrador.",
+        "responses": {
+          "200": {
+            "description": "Tiendas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Tienda"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos, o token mal formado o expirado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Usuario desactivado o inexistente, o rol sin permiso para esta ruta",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Falta el token, o el recurso pertenece a otra tienda",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Administración"
+        ],
+        "summary": "Crear una tienda",
+        "description": "Rol: administrador.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "nombre"
+                ],
+                "properties": {
+                  "nombre": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "example": "Tienda Centro"
+                  },
+                  "direccion": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "nullable": true,
+                    "example": "Calle 10 # 5-20"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Tienda creada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Tienda"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos, o token mal formado o expirado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Usuario desactivado o inexistente, o rol sin permiso para esta ruta",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Falta el token, o el recurso pertenece a otra tienda",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/usuarios": {
+      "get": {
+        "tags": [
+          "Administración"
+        ],
+        "summary": "Listar usuarios",
+        "description": "Rol: administrador.",
+        "responses": {
+          "200": {
+            "description": "Usuarios",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Usuario"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos, o token mal formado o expirado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Usuario desactivado o inexistente, o rol sin permiso para esta ruta",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Falta el token, o el recurso pertenece a otra tienda",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Administración"
+        ],
+        "summary": "Crear un usuario de cualquier rol",
+        "description": "Rol: administrador. `tienda_id` es obligatoria para vendedor y administrador.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "nombre",
+                  "email",
+                  "password",
+                  "rol"
+                ],
+                "properties": {
+                  "nombre": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "example": "Vendedora Tres"
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "maxLength": 150,
+                    "example": "vendedor3@tutienda.com"
+                  },
+                  "password": {
+                    "type": "string",
+                    "format": "password",
+                    "minLength": 8,
+                    "example": "ClaveSegura123"
+                  },
+                  "rol": {
+                    "$ref": "#/components/schemas/Rol"
+                  },
+                  "tienda_id": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "nullable": true,
+                    "example": 1
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Usuario creado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Usuario"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos, o token mal formado o expirado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Usuario desactivado o inexistente, o rol sin permiso para esta ruta",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Falta el token, o el recurso pertenece a otra tienda",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ya existe un usuario con ese email",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/usuarios/{id}/activo": {
+      "patch": {
+        "tags": [
+          "Administración"
+        ],
+        "summary": "Activar o desactivar un usuario",
+        "description": "Rol: administrador. Un usuario desactivado pierde el acceso de inmediato.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Id del usuario",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "activo"
+                ],
+                "properties": {
+                  "activo": {
+                    "type": "boolean",
+                    "example": false
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Usuario actualizado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Usuario"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos, o token mal formado o expirado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Usuario desactivado o inexistente, o rol sin permiso para esta ruta",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Falta el token, o el recurso pertenece a otra tienda",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Usuario no encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "No puede desactivar su propio usuario",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/chat": {
+      "post": {
+        "tags": [
+          "Asistente virtual"
+        ],
+        "summary": "Enviar un mensaje al asistente",
+        "description": "Cualquier usuario autenticado. Motor de reglas: responde según el rol y solo con datos del propio usuario o de su tienda. Límite: `CHAT_RATE_LIMIT` mensajes por IP por minuto.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "mensaje"
+                ],
+                "properties": {
+                  "mensaje": {
+                    "type": "string",
+                    "maxLength": 300,
+                    "example": "stock bajo"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Respuesta del asistente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespuestaChat"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos, o token mal formado o expirado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Usuario desactivado o inexistente, o rol sin permiso para esta ruta",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Falta el token, o el recurso pertenece a otra tienda",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Demasiados mensajes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
