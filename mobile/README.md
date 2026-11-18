@@ -45,19 +45,21 @@ lib/
 └── screens/
     ├── login_screen.dart              Login -> Sesion -> HomeScreen
     ├── registro_screen.dart           Alta de cliente (POST /api/auth/registro)
-    ├── home_screen.dart               BottomNavigationBar: Catálogo | Mis Pedidos
+    ├── home_screen.dart               BottomNavigationBar: Catálogo | Mis Pedidos | Asistente
     ├── catalogo_screen.dart           GET /api/productos
     ├── producto_detalle_screen.dart   Detalle + reseñas + Comprar (POST /api/pedidos)
-    └── mis_pedidos_screen.dart        GET /api/pedidos/mios + Calificar (POST /api/resenas)
+    ├── mis_pedidos_screen.dart        GET /api/pedidos/mios + Calificar (POST /api/resenas)
+    └── chat_screen.dart               Asistente virtual (POST /api/chat) con respuestas rápidas
 ```
 
 ## Flujo
 
 1. `LoginScreen` (precargado con `cliente@correo.com` / `Password123`, o
    `RegistroScreen` para una cuenta nueva) obtiene el JWT y lo guarda en `Sesion`.
-2. `HomeScreen` con dos pestañas:
+2. `HomeScreen` con tres pestañas:
    - **Catálogo** → tocar un producto → **Comprar** (descuenta stock).
    - **Mis Pedidos** → sobre un pedido `entregado`, **Calificar** (1–5 ★ + comentario).
+   - **Asistente** → chat para consultar el estado de un pedido, buscar productos y resolver dudas (ver [`../docs/Fase3_Chatbot.md`](../docs/Fase3_Chatbot.md)).
 
 ## Prueba de integración
 
