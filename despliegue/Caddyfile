@@ -1,0 +1,15 @@
+# Caddy: entrada pública con HTTPS automático (certificados de Let's Encrypt).
+# DOMINIO viene de .env; con sslip.io no hace falta comprar un dominio:
+#   DOMINIO=20-30-40-50.sslip.io   (la IP pública de la VM con guiones)
+
+{$DOMINIO} {
+	encode gzip
+	# La aplicación (nginx sirve la web y reenvía /api a la API).
+	reverse_proxy web:80
+}
+
+# Bandeja de Mailpit para mostrar los correos en la demo, protegida con usuario y contraseña
+# (MAILPIT_UI_AUTH en .env).
+correo.{$DOMINIO} {
+	reverse_proxy mailpit:8025
+}

@@ -1,0 +1,45 @@
+# Ajustes para desplegar en una máquina virtual pública (nube). Se usa ENCIMA de
+# docker-compose.prod.yml:
+#
+#   docker compose -f docker-compose.prod.yml -f docker-compose.nube.yml up --build -d
+#
+# Cambios respecto al despliegue local:
+#  - Caddy recibe el tráfico en 80/443 con HTTPS automático y lo pasa a nginx (web).
+#  - web y mailpit dejan de publicarse directamente: solo se llega a ellos a través de Caddy.
+#  - Mailpit exige usuario y contraseña (MAILPIT_UI_AUTH).
+#  - La API confía en dos proxies (Caddy y nginx) para leer la IP real del cliente.
+# Requiere Docker Compose 2.24 o superior (por "!reset").
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      web:
+        condition: service_healthy
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMINIO: ${DOMINIO:?Define DOMINIO en .env (por ejemplo 20-30-40-50.sslip.io)}
+    volumes:
+      - ./despliegue/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+  web:
+    ports: !reset []
+
+  api:
+    environment:
+      TRUST_PROXY: 2
+      CORS_ORIGIN: https://${DOMINIO}
+
+  mailpit:
+    ports: !reset []
+    environment:
+      MP_UI_AUTH: ${MAILPIT_UI_AUTH:?Define MAILPIT_UI_AUTH=usuario:contraseña en .env}
+
+volumes:
+  caddy_data:
+  caddy_config:
