@@ -3,6 +3,7 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { getUsuario, logout } from '../api';
+import ChatWidget from './ChatWidget.jsx';
 
 const enlacesPorRol = {
   vendedor: [
@@ -14,10 +15,13 @@ const enlacesPorRol = {
   cliente: [],
 };
 
+const NOMBRE_ROL = { vendedor: 'Vendedor', administrador: 'Administrador', cliente: 'Cliente' };
+
 export default function Layout({ children }) {
   const navigate = useNavigate();
   const usuario = getUsuario();
   const enlaces = enlacesPorRol[usuario?.rol] || [];
+  const inicial = (usuario?.nombre || '?').trim().charAt(0).toUpperCase();
 
   const salir = () => {
     logout();
@@ -25,35 +29,64 @@ export default function Layout({ children }) {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-blue-700 text-white">
-        <div className="max-w-6xl mx-auto px-6 py-3 flex items-center gap-6">
-          <span className="font-bold">Comercio Electrónico</span>
-          <nav className="flex gap-4 text-sm flex-1">
+    <div className="min-h-screen">
+      <a
+        href="#contenido"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-white focus:px-4 focus:py-2 focus:text-sm focus:shadow"
+      >
+        Saltar al contenido
+      </a>
+      <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-2 px-6 py-3">
+          <span className="flex items-center gap-2 font-bold text-slate-900">
+            <span
+              aria-hidden="true"
+              className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-sm text-white"
+            >
+              CE
+            </span>
+            Comercio Electrónico
+          </span>
+          <nav aria-label="Principal" className="flex flex-1 gap-1 text-sm">
             {enlaces.map((e) => (
               <NavLink
                 key={e.to}
                 to={e.to}
                 className={({ isActive }) =>
-                  `hover:underline ${isActive ? 'font-semibold underline' : ''}`
+                  `rounded-lg px-3 py-1.5 font-medium transition-colors ${
+                    isActive ? 'bg-blue-50 text-blue-800' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                  }`
                 }
               >
                 {e.texto}
               </NavLink>
             ))}
           </nav>
-          <span className="text-sm opacity-90">
-            {usuario?.nombre} ({usuario?.rol})
-          </span>
-          <button
-            onClick={salir}
-            className="text-sm bg-blue-800 hover:bg-blue-900 px-3 py-1 rounded"
-          >
-            Salir
-          </button>
+          <div className="flex items-center gap-3">
+            <span
+              aria-hidden="true"
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-200 text-sm font-semibold text-slate-700"
+            >
+              {inicial}
+            </span>
+            <span className="text-sm leading-tight">
+              <span className="block font-medium text-slate-900">{usuario?.nombre}</span>
+              <span className="block text-xs text-slate-600">{NOMBRE_ROL[usuario?.rol] || usuario?.rol}</span>
+            </span>
+            <button
+              onClick={salir}
+              className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            >
+              Salir
+            </button>
+          </div>
         </div>
       </header>
-      <main className="max-w-6xl mx-auto px-6 py-6">{children}</main>
+      <main id="contenido" className="mx-auto max-w-6xl px-6 py-8">
+        {children}
+      </main>
+      {/* Asistente virtual (Fase 3): disponible para vendedor y administrador. */}
+      {usuario && <ChatWidget />}
     </div>
   );
 }

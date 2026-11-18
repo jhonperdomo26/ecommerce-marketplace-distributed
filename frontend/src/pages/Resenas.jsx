@@ -1,16 +1,25 @@
 // src/pages/Resenas.jsx
 // Reseñas de los productos de la tienda del vendedor -> GET /api/resenas/mis-productos.
-import React, { useState, useEffect } from 'react';
+// Usabilidad: promedio y total a la vista, estrellas con texto para lector de pantalla,
+// estados de carga y error anunciados (U-13) y contraste suficiente (U-12).
+import React, { useEffect, useMemo, useState } from 'react';
 import Layout from '../components/Layout';
 import { apiJson } from '../api';
+import { Cargando, Encabezado, MensajeError, Tarjeta, Vacio } from '../components/ui.jsx';
 
 function Estrellas({ valor }) {
-  const llenas = Math.round(Number(valor));
+  const numero = Number(valor);
+  const llenas = Math.round(numero);
+  const texto = numero.toLocaleString('es-CO', { maximumFractionDigits: 1 });
   return (
-    <span className="text-yellow-500">
-      {'★'.repeat(llenas)}
-      <span className="text-gray-300">{'★'.repeat(5 - llenas)}</span>{' '}
-      <span className="text-gray-600 text-xs">({valor})</span>
+    <span className="inline-flex items-center gap-1" role="img" aria-label={`${texto} de 5 estrellas`}>
+      <span aria-hidden="true" className="text-amber-500">
+        {'★'.repeat(llenas)}
+        <span className="text-slate-300">{'★'.repeat(5 - llenas)}</span>
+      </span>
+      <span aria-hidden="true" className="text-xs font-medium text-slate-700">
+        {texto}
+      </span>
     </span>
   );
 }
@@ -27,38 +36,58 @@ export default function Resenas() {
       .finally(() => setCargando(false));
   }, []);
 
+  const promedio = useMemo(
+    () => (resenas.length ? resenas.reduce((s, r) => s + Number(r.calificacion), 0) / resenas.length : null),
+    [resenas]
+  );
+
   return (
     <Layout>
-      <h1 className="text-2xl font-bold text-gray-800 mb-6">
-        Reseñas de mis productos
-      </h1>
+      <Encabezado
+        titulo="Reseñas de mis productos"
+        descripcion="Los clientes califican un pedido cuando lo marcas como entregado."
+      >
+        {promedio !== null && (
+          <Tarjeta className="px-4 py-2">
+            <span className="text-sm text-slate-600">Promedio </span>
+            <Estrellas valor={promedio} />
+            <span className="ml-2 text-sm text-slate-600">
+              · {resenas.length} {resenas.length === 1 ? 'reseña' : 'reseñas'}
+            </span>
+          </Tarjeta>
+        )}
+      </Encabezado>
 
-      {error && <p className="text-red-600 text-sm mb-4">{error}</p>}
+      <MensajeError>{error}</MensajeError>
 
       {cargando ? (
-        <p className="text-gray-500">Cargando...</p>
+        <Tarjeta>
+          <Cargando texto="Cargando reseñas…" />
+        </Tarjeta>
       ) : resenas.length === 0 ? (
-        <p className="text-gray-500">Todavía no hay reseñas.</p>
+        <Tarjeta>
+          <Vacio titulo="Todavía no hay reseñas.">Aparecerán aquí cuando un cliente califique un pedido entregado.</Vacio>
+        </Tarjeta>
       ) : (
-        <div className="space-y-3">
+        <ul className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {resenas.map((r) => (
-            <div key={r.id} className="bg-white shadow rounded-lg p-4">
-              <div className="flex justify-between items-center mb-1">
-                <span className="font-semibold text-gray-800">
-                  {r.producto_nombre}
-                </span>
-                <Estrellas valor={r.calificacion} />
-              </div>
-              <p className="text-sm text-gray-700">
-                {r.comentario || <em className="text-gray-400">Sin comentario</em>}
-              </p>
-              <p className="text-xs text-gray-400 mt-2">
-                {r.cliente_nombre} ·{' '}
-                {new Date(r.fecha_registro).toLocaleDateString()}
-              </p>
-            </div>
+            <li key={r.id}>
+              <Tarjeta className="h-full p-5">
+                <div className="mb-2 flex items-start justify-between gap-3">
+                  <h2 className="font-semibold text-slate-900">{r.producto_nombre}</h2>
+                  <Estrellas valor={r.calificacion} />
+                </div>
+                <p className="text-sm text-slate-800">
+                  {r.comentario || <em className="text-slate-600">Sin comentario</em>}
+                </p>
+                <p className="mt-3 text-xs text-slate-600">
+                  {r.cliente_nombre} ·{' '}
+                  {new Date(r.fecha_registro).toLocaleDateString('es-CO', { dateStyle: 'medium' })}
+                </p>
+              </Tarjeta>
+            </li>
           ))}
-        </div>
+        </ul>
       )}
     </Layout>
   );

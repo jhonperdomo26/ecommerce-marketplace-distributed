@@ -45,6 +45,15 @@ export async function apiFetch(path, options = {}) {
       ...(options.headers || {}),
     },
   });
+  // Sesión vencida o usuario desactivado: el backend responde 400/401/403 con estos mensajes.
+  // Sin esto la persona se quedaba en pantalla viendo un error rojo sin saber que debía entrar de nuevo.
+  if ([400, 401, 403].includes(res.status) && token) {
+    const cuerpo = await res.clone().json().catch(() => ({}));
+    if (/^(Token inv|Sesión no válida)/.test(cuerpo.mensaje || '')) {
+      logout();
+      window.location.assign('/login?sesion=vencida');
+    }
+  }
   return res;
 }
 

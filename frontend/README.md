@@ -43,7 +43,8 @@ src/
 ├── api.js                       token/usuario en localStorage + apiFetch / apiJson
 ├── components/
 │   ├── Layout.jsx               Barra de navegación según rol + "Salir"
-│   └── PanelPedidos.jsx         Tabla de pedidos (base del manual) + cambio de estado
+│   ├── PanelPedidos.jsx         Tabla de pedidos (base del manual) + cambio de estado
+│   └── ChatWidget.jsx           Asistente virtual flotante (POST /api/chat), visible desde Layout
 └── pages/
     ├── Login.jsx                Inicio de sesión
     ├── Registro.jsx             Alta de clientes

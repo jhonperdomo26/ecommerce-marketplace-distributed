@@ -3,7 +3,6 @@
 // Los vendedores/administradores los crea el administrador desde su panel.
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { guardarSesion } from '../api';
 
 export default function Registro() {
   const navigate = useNavigate();
@@ -28,13 +27,14 @@ export default function Registro() {
         setError(data.mensaje || 'No fue posible crear la cuenta.');
         return;
       }
-      guardarSesion(data);
-      setError('');
-      // El cliente no tiene vistas en web; se le informa y se vuelve al login.
-      alert(
-        'Cuenta creada. La compra y el seguimiento de pedidos se hacen desde la app móvil.'
-      );
-      navigate('/login');
+      // El cliente no tiene vistas en web: no se guarda la sesión, se vuelve al login con un aviso
+      // en pantalla (antes era un alert() del navegador que bloqueaba la página).
+      navigate('/login', {
+        state: {
+          aviso:
+            'Cuenta creada. La compra y el seguimiento de pedidos se hacen desde la app móvil.',
+        },
+      });
     } catch (err) {
       setError('Error de conexión con la API.');
     } finally {
@@ -43,59 +43,73 @@ export default function Registro() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50 p-4">
       <form
         onSubmit={onSubmit}
-        className="bg-white shadow-md rounded-lg p-8 w-full max-w-sm"
+        className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-8 shadow-sm"
       >
-        <h1 className="text-2xl font-bold text-gray-800 mb-6">Crear cuenta</h1>
+        <h1 className="mb-1 text-2xl font-bold text-slate-900">Crear cuenta</h1>
+        <p className="mb-6 text-sm text-slate-600">Cuenta de cliente. Las compras se hacen desde la app móvil.</p>
 
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label htmlFor="reg-nombre" className="mb-1 block text-sm font-medium text-slate-700">
           Nombre
         </label>
         <input
+          id="reg-nombre"
+          maxLength={100}
+          autoComplete="name"
           value={form.nombre}
           onChange={set('nombre')}
-          className="w-full border border-gray-300 rounded px-3 py-2 mb-4"
+          className="mb-4 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
           required
         />
 
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label htmlFor="reg-email" className="mb-1 block text-sm font-medium text-slate-700">
           Email
         </label>
         <input
+          id="reg-email"
           type="email"
+          maxLength={150}
+          autoComplete="email"
           value={form.email}
           onChange={set('email')}
-          className="w-full border border-gray-300 rounded px-3 py-2 mb-4"
+          className="mb-4 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
           required
         />
 
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Contraseña (mín. 6 caracteres)
+        <label htmlFor="reg-password" className="mb-1 block text-sm font-medium text-slate-700">
+          Contraseña (mín. 8 caracteres)
         </label>
         <input
+          id="reg-password"
           type="password"
+          autoComplete="new-password"
           value={form.password}
           onChange={set('password')}
-          minLength={6}
-          className="w-full border border-gray-300 rounded px-3 py-2 mb-4"
+          minLength={8}
+          maxLength={72}
+          className="mb-4 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
           required
         />
 
-        {error && <p className="text-red-600 text-sm mb-4">{error}</p>}
+        {error && (
+          <p role="alert" className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+            {error}
+          </p>
+        )}
 
         <button
           type="submit"
           disabled={cargando}
-          className="w-full bg-blue-600 text-white font-semibold py-2 rounded hover:bg-blue-700 disabled:opacity-50"
+          className="w-full rounded-lg bg-blue-600 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
         >
           {cargando ? 'Creando...' : 'Crear cuenta'}
         </button>
 
-        <p className="text-sm text-gray-600 mt-4">
+        <p className="mt-4 text-sm text-slate-600">
           ¿Ya tienes cuenta?{' '}
-          <Link to="/login" className="text-blue-600 hover:underline">
+          <Link to="/login" className="font-medium text-blue-700 hover:underline">
             Iniciar sesión
           </Link>
         </p>
