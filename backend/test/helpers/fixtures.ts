@@ -4,9 +4,23 @@
 // ({ id, rol, tienda_id }).
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import { pool } from '../../src/db';
+import { bd, cerrarBd } from '../../src/db';
 
-export { pool };
+// Acceso SQL directo SOLO para preparar y revisar datos en las pruebas, sobre la misma
+// conexión de TypeORM que usa la API (así hay un único pool y pool.end() lo cierra).
+// Devuelve { rows, rowCount } como el pool de pg que usaban las pruebas antes del ORM.
+export const pool = {
+  async query(sql: string, params: unknown[] = []): Promise<{ rows: any[]; rowCount: number }> {
+    const qr = (await bd()).createQueryRunner();
+    try {
+      const r = await qr.query(sql, params, true);
+      return { rows: r.records ?? [], rowCount: r.affected ?? 0 };
+    } finally {
+      await qr.release();
+    }
+  },
+  end: cerrarBd,
+};
 
 const SECRET = process.env.JWT_SECRET || 'FirmaSecretaPruebas';
 

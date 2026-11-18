@@ -4,8 +4,16 @@
 // siempre del token, nunca del cuerpo de la petición.
 import { Response } from 'express';
 import { AuthRequest } from '../middleware/auth';
-import { pool } from '../db';
+import { repo } from '../db';
+import { Producto } from '../entidades';
+import { columnas } from '../utils/consultas';
 import { enviarErrorInterno } from '../utils/errores';
+import {
+  enteroPositivo,
+  enteroNoNegativo,
+  precioValido,
+  textoValido,
+} from '../utils/validar';
 
 // GET /api/productos            -> catálogo completo (cualquier usuario autenticado)
 // GET /api/productos?tienda_id= -> catálogo filtrado por tienda
@@ -14,22 +22,26 @@ export const listarCatalogo = async (
   res: Response
 ): Promise<void> => {
   try {
-    const tiendaId = req.query.tienda_id ? Number(req.query.tienda_id) : null;
-    const resultado = await pool.query(
-      `SELECT prod.id,
-              prod.nombre,
-              prod.sku,
-              prod.precio,
-              prod.stock,
-              prod.tienda_id,
-              t.nombre AS tienda_nombre
-       FROM productos prod
-       JOIN tiendas t ON prod.tienda_id = t.id
-       WHERE ($1::int IS NULL OR prod.tienda_id = $1)
-       ORDER BY prod.nombre`,
-      [tiendaId]
-    );
-    res.status(200).json(resultado.rows);
+    let tiendaId: number | null = null;
+    if (req.query.tienda_id !== undefined && req.query.tienda_id !== '') {
+      tiendaId = enteroPositivo(req.query.tienda_id);
+      if (tiendaId === null) {
+        res.status(400).json({ mensaje: 'tienda_id debe ser un entero positivo.' });
+        return;
+      }
+    }
+    const qb = (await repo(Producto)).createQueryBuilder('prod').innerJoin('prod.tienda', 't');
+    columnas(qb, {
+      id: 'prod.id',
+      nombre: 'prod.nombre',
+      sku: 'prod.sku',
+      precio: 'prod.precio',
+      stock: 'prod.stock',
+      tienda_id: 'prod.tienda_id',
+      tienda_nombre: 't.nombre',
+    });
+    if (tiendaId !== null) qb.where('prod.tienda_id = :tiendaId', { tiendaId });
+    res.status(200).json(await qb.orderBy('prod.nombre', 'ASC').getRawMany());
   } catch (error) {
     enviarErrorInterno(res, error);
   }
@@ -41,14 +53,11 @@ export const listarMisProductos = async (
   res: Response
 ): Promise<void> => {
   try {
-    const resultado = await pool.query(
-      `SELECT id, nombre, sku, precio, stock, tienda_id, vendedor_id
-       FROM productos
-       WHERE tienda_id = $1
-       ORDER BY nombre`,
-      [req.tienda_id]
-    );
-    res.status(200).json(resultado.rows);
+    const productos = await (await repo(Producto)).find({
+      where: { tienda_id: req.tienda_id },
+      order: { nombre: 'ASC' },
+    });
+    res.status(200).json(productos);
   } catch (error) {
     enviarErrorInterno(res, error);
   }
@@ -59,29 +68,44 @@ export const crearProducto = async (
   req: AuthRequest,
   res: Response
 ): Promise<void> => {
-  const { nombre, sku, precio, stock } = req.body;
+  const cuerpo = req.body ?? {};
 
-  if (!nombre || !sku || precio === undefined) {
+  if (!cuerpo.nombre || !cuerpo.sku || cuerpo.precio === undefined) {
     res
       .status(400)
       .json({ mensaje: 'nombre, sku y precio son obligatorios.' });
     return;
   }
-  if (Number(precio) < 0 || Number(stock ?? 0) < 0) {
-    res
-      .status(400)
-      .json({ mensaje: 'precio y stock no pueden ser negativos.' });
+  const nombre = textoValido(cuerpo.nombre, 100);
+  const sku = textoValido(cuerpo.sku, 20);
+  const precio = precioValido(cuerpo.precio);
+  const stock = cuerpo.stock === undefined || cuerpo.stock === null ? 0 : enteroNoNegativo(cuerpo.stock);
+  if (nombre === null || sku === null) {
+    res.status(400).json({
+      mensaje: 'nombre (máx. 100) y sku (máx. 20) deben ser texto no vacío.',
+    });
+    return;
+  }
+  if (precio === null || stock === null) {
+    res.status(400).json({
+      mensaje: 'precio debe ser un número entre 0 y 99999999.99 y stock un entero no negativo.',
+    });
     return;
   }
 
   try {
-    const resultado = await pool.query(
-      `INSERT INTO productos (nombre, sku, precio, stock, vendedor_id, tienda_id)
-       VALUES ($1, $2, $3, $4, $5, $6)
-       RETURNING id, nombre, sku, precio, stock, tienda_id, vendedor_id`,
-      [nombre, sku, precio, stock ?? 0, req.usuario_id, req.tienda_id]
+    const productos = await repo(Producto);
+    const nuevo = await productos.save(
+      productos.create({
+        nombre,
+        sku,
+        precio: String(precio),
+        stock,
+        vendedor_id: req.usuario_id,
+        tienda_id: req.tienda_id,
+      })
     );
-    res.status(201).json(resultado.rows[0]);
+    res.status(201).json(await productos.findOneBy({ id: nuevo.id }));
   } catch (error: any) {
     if (error?.code === '23505') {
       res.status(409).json({ mensaje: 'Ya existe un producto con ese SKU.' });
@@ -102,35 +126,50 @@ export const actualizarProducto = async (
   req: AuthRequest,
   res: Response
 ): Promise<void> => {
-  const productoId = Number(req.params.id);
-  const { nombre, sku, precio, stock } = req.body;
+  const productoId = enteroPositivo(req.params.id);
+  if (productoId === null) {
+    res.status(400).json({ mensaje: 'El id del producto debe ser un entero positivo.' });
+    return;
+  }
+  // Campos opcionales: si vienen, se validan igual que al crear.
+  const cuerpo = req.body ?? {};
+  const nombre = cuerpo.nombre === undefined ? null : textoValido(cuerpo.nombre, 100);
+  const sku = cuerpo.sku === undefined ? null : textoValido(cuerpo.sku, 20);
+  const precio = cuerpo.precio === undefined ? null : precioValido(cuerpo.precio);
+  const stock = cuerpo.stock === undefined ? null : enteroNoNegativo(cuerpo.stock);
+  if (
+    (cuerpo.nombre !== undefined && nombre === null) ||
+    (cuerpo.sku !== undefined && sku === null) ||
+    (cuerpo.precio !== undefined && precio === null) ||
+    (cuerpo.stock !== undefined && stock === null)
+  ) {
+    res.status(400).json({
+      mensaje: 'Algún campo no es válido (nombre ≤100, sku ≤20, precio 0–99999999.99, stock entero ≥0).',
+    });
+    return;
+  }
 
   try {
-    const propietario = await pool.query(
-      `SELECT tienda_id FROM productos WHERE id = $1`,
-      [productoId]
-    );
-    if (
-      propietario.rows.length === 0 ||
-      propietario.rows[0].tienda_id !== req.tienda_id
-    ) {
+    const productos = await repo(Producto);
+    const propietario = await productos.findOne({
+      where: { id: productoId },
+      select: { id: true, tienda_id: true },
+    });
+    if (!propietario || propietario.tienda_id !== req.tienda_id) {
       res
         .status(403)
         .json({ mensaje: 'Operación no permitida para la tienda actual.' });
       return;
     }
 
-    const resultado = await pool.query(
-      `UPDATE productos
-       SET nombre = COALESCE($1, nombre),
-           sku    = COALESCE($2, sku),
-           precio = COALESCE($3, precio),
-           stock  = COALESCE($4, stock)
-       WHERE id = $5
-       RETURNING id, nombre, sku, precio, stock, tienda_id, vendedor_id`,
-      [nombre ?? null, sku ?? null, precio ?? null, stock ?? null, productoId]
-    );
-    res.status(200).json(resultado.rows[0]);
+    // Solo se actualizan los campos que llegaron (antes: COALESCE en SQL).
+    const cambios: Partial<Producto> = {};
+    if (nombre !== null) cambios.nombre = nombre;
+    if (sku !== null) cambios.sku = sku;
+    if (precio !== null) cambios.precio = String(precio);
+    if (stock !== null) cambios.stock = stock;
+    if (Object.keys(cambios).length > 0) await productos.update({ id: productoId }, cambios);
+    res.status(200).json(await productos.findOneBy({ id: productoId }));
   } catch (error: any) {
     if (error?.code === '23505') {
       res.status(409).json({ mensaje: 'Ya existe un producto con ese SKU.' });
@@ -151,23 +190,25 @@ export const eliminarProducto = async (
   req: AuthRequest,
   res: Response
 ): Promise<void> => {
-  const productoId = Number(req.params.id);
+  const productoId = enteroPositivo(req.params.id);
+  if (productoId === null) {
+    res.status(400).json({ mensaje: 'El id del producto debe ser un entero positivo.' });
+    return;
+  }
   try {
-    const propietario = await pool.query(
-      `SELECT tienda_id FROM productos WHERE id = $1`,
-      [productoId]
-    );
-    if (
-      propietario.rows.length === 0 ||
-      propietario.rows[0].tienda_id !== req.tienda_id
-    ) {
+    const productos = await repo(Producto);
+    const propietario = await productos.findOne({
+      where: { id: productoId },
+      select: { id: true, tienda_id: true },
+    });
+    if (!propietario || propietario.tienda_id !== req.tienda_id) {
       res
         .status(403)
         .json({ mensaje: 'Operación no permitida para la tienda actual.' });
       return;
     }
 
-    await pool.query(`DELETE FROM productos WHERE id = $1`, [productoId]);
+    await productos.delete({ id: productoId });
     res.status(200).json({ mensaje: 'Producto eliminado.' });
   } catch (error: any) {
     if (error?.code === '23503') {

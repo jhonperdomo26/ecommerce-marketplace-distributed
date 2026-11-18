@@ -134,3 +134,46 @@ describe('POST /api/pedidos — crearPedido', () => {
     expect(Number(pedidos.rows[0].count)).toBe(0);
   });
 });
+
+describe('GET /api/pedidos/por-tienda · filtros (usabilidad U-10)', () => {
+  async function escenarioFiltros() {
+    const tienda = await crearTienda('Tienda F');
+    const vendedor = await crearUsuario({ email: 'vf@test.com', rol: 'vendedor', tienda_id: tienda });
+    const ana = await crearUsuario({ nombre: 'Ana Ruiz', email: 'ana@test.com', rol: 'cliente' });
+    const beto = await crearUsuario({ nombre: 'Beto Gil', email: 'beto@test.com', rol: 'cliente' });
+    const producto = await crearProducto({ tienda_id: tienda, vendedor_id: vendedor, stock: 50 });
+    await crearPedido({ cliente_id: ana, producto_id: producto, estado: 'pendiente' });
+    await crearPedido({ cliente_id: ana, producto_id: producto, estado: 'entregado' });
+    await crearPedido({ cliente_id: beto, producto_id: producto, estado: 'pendiente' });
+    return tokenDe({ id: vendedor, rol: 'vendedor', tienda_id: tienda });
+  }
+
+  const pedir = (token: string, query: string) =>
+    request(app).get(`/api/pedidos/por-tienda?${query}`).set('Authorization', `Bearer ${token}`);
+
+  it('filtra por estado y el total cuenta solo los filtrados', async () => {
+    const token = await escenarioFiltros();
+    const res = await pedir(token, 'estado=pendiente');
+    expect(res.status).toBe(200);
+    expect(res.body.total).toBe(2);
+    expect(res.body.datos.every((p: any) => p.estado === 'pendiente')).toBe(true);
+  });
+
+  it('busca por nombre del cliente sin distinguir mayúsculas', async () => {
+    const token = await escenarioFiltros();
+    const res = await pedir(token, 'q=beto');
+    expect(res.body.total).toBe(1);
+    expect(res.body.datos[0].cliente_nombre).toBe('Beto Gil');
+  });
+
+  it('combina estado y texto; los comodines se buscan literalmente', async () => {
+    const token = await escenarioFiltros();
+    expect((await pedir(token, 'estado=entregado&q=ana')).body.total).toBe(1);
+    expect((await pedir(token, 'q=%25')).body.total).toBe(0);
+  });
+
+  it('un estado fuera del catálogo responde 400', async () => {
+    const token = await escenarioFiltros();
+    expect((await pedir(token, 'estado=volando')).status).toBe(400);
+  });
+});
