@@ -1,0 +1,111 @@
+# Despliegue completo: PostgreSQL + API + Web (nginx) + Mailpit (correo de pruebas).
+#
+#   cp .env.example .env        # y completa JWT_SECRET y DB_PASSWORD
+#   docker compose -f docker-compose.prod.yml up --build -d
+#   -> http://localhost:8080            la aplicación web
+#   -> http://localhost:8080/api/docs   documentación de la API (Swagger)
+#   -> http://localhost:8025            bandeja de Mailpit: los correos que envía la API
+#
+#   docker compose -f docker-compose.prod.yml logs -f api
+#   docker compose -f docker-compose.prod.yml down        # detener (conserva los datos)
+#   docker compose -f docker-compose.prod.yml down -v     # detener y BORRAR los datos
+#
+# El docker-compose.yml de la raíz (BD + pgAdmin) sigue siendo el de desarrollo local.
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Define DB_PASSWORD en el archivo .env}
+      POSTGRES_DB: ${DB_DATABASE:-comercio_electronico}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      # Se ejecutan en orden alfabético SOLO al crear el volumen por primera vez.
+      - ./database/01_schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
+      - ./database/02_seed.sql:/docker-entrypoint-initdb.d/02_seed.sql:ro
+      - ./database/03_constraints.sql:/docker-entrypoint-initdb.d/03_constraints.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_DATABASE:-comercio_electronico}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    # La base no se publica al exterior: solo la ve la API dentro de la red de Compose.
+
+  api:
+    build: ./backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:?Define DB_PASSWORD en el archivo .env}
+      DB_DATABASE: ${DB_DATABASE:-comercio_electronico}
+      DB_POOL_MAX: ${DB_POOL_MAX:-30}
+      # Sin este valor (>= 32 caracteres) la API se niega a arrancar en producción.
+      JWT_SECRET: ${JWT_SECRET:?Define JWT_SECRET (>= 32 caracteres) en el archivo .env}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:8080}
+      # Hay un salto de proxy (nginx) delante de la API.
+      TRUST_PROXY: 1
+      LOGIN_RATE_LIMIT: ${LOGIN_RATE_LIMIT:-10}
+      REGISTRO_RATE_LIMIT: ${REGISTRO_RATE_LIMIT:-20}
+      CHAT_RATE_LIMIT: ${CHAT_RATE_LIMIT:-60}
+      # Notificaciones por correo (servicio externo). Por defecto van a Mailpit; para un
+      # proveedor real, definir SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS y SMTP_SECURE en .env.
+      SMTP_HOST: ${SMTP_HOST:-mailpit}
+      SMTP_PORT: ${SMTP_PORT:-1025}
+      SMTP_SECURE: ${SMTP_SECURE:-false}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM:-Comercio Electrónico <no-responder@comercio.local>}
+      API_DOCS: ${API_DOCS:-1}
+    # La API tampoco se publica: se accede por nginx en /api.
+
+  web:
+    build: ./frontend
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "${WEB_PORT:-8080}:80"
+
+  # Servidor SMTP de pruebas: recibe los correos de la API y los muestra en una bandeja web.
+  # No los entrega a nadie de verdad. La API no depende de él para funcionar: si no está, el
+  # pedido se crea igual y el fallo del correo queda en el log.
+  mailpit:
+    image: axllent/mailpit:latest
+    restart: unless-stopped
+    ports:
+      - "${MAILPIT_PORT:-8025}:8025"
+
+  # Suite de aceptación End-to-End. NO arranca con "up": solo cuando se pide, así no hace
+  # falta instalar Node en el equipo:
+  #   docker compose -f docker-compose.prod.yml --profile pruebas run --rm e2e
+  e2e:
+    profiles: ["pruebas"]
+    build:
+      context: ./backend
+      target: build          # etapa con las dependencias de desarrollo (Jest)
+    depends_on:
+      web:
+        condition: service_healthy
+    environment:
+      BASE_URL: http://web
+      E2E_WEB: "1"
+      MAILPIT_URL: http://mailpit:8025
+      E2E_CLAVE: ${E2E_CLAVE:-Password123}
+      MAILPIT_UI_AUTH: ${MAILPIT_UI_AUTH:-}
+    volumes:
+      - ./backend/e2e:/app/e2e:ro
+      - ./backend/jest.e2e.config.js:/app/jest.e2e.config.js:ro
+    command: ["npx", "jest", "--config", "jest.e2e.config.js", "--runInBand"]
+
+volumes:
+  db_data:
