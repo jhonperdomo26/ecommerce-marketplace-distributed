@@ -40,10 +40,11 @@ export default function Login() {
         setError(data.mensaje || 'No fue posible iniciar sesión.');
         return;
       }
-      // Un cliente no tiene vistas en la web: se le avisa sin dejar la sesión guardada.
+      // El panel es solo para vendedores y administradores: al cliente se le indica la tienda
+      // del cliente (app Flutter compilada para web, en /app/) sin dejar la sesión guardada.
       if (data.usuario.rol === 'cliente') {
         setError(
-          'Este usuario es un cliente. La vista de cliente está en la app móvil.'
+          'Este usuario es un cliente. Entra por la tienda del cliente (enlace de abajo).'
         );
         return;
       }
@@ -112,15 +113,23 @@ export default function Login() {
         </button>
 
         <p className="mt-4 text-sm text-slate-600">
-          ¿Eres cliente nuevo?{' '}
+          ¿Eres cliente?{' '}
+          <a href="/app/" className="font-medium text-blue-700 hover:underline">
+            Ir a la tienda del cliente
+          </a>
+          {' · '}
           <Link to="/registro" className="font-medium text-blue-700 hover:underline">
             Crear cuenta
           </Link>
         </p>
-        <p className="mt-3 rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-600">
-          Prueba: vendedor1@tutienda.com / Password123 (vendedor) ·
-          admin@tutienda.com (administrador)
-        </p>
+        {/* Las claves de la semilla solo se muestran en desarrollo: en un despliegue público se
+            cambian (cambiarClavesDemo) y el texto sería falso. */}
+        {import.meta.env.DEV && (
+          <p className="mt-3 rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-600">
+            Prueba: vendedor1@tutienda.com / Password123 (vendedor) ·
+            admin@tutienda.com (administrador)
+          </p>
+        )}
       </form>
     </div>
   );

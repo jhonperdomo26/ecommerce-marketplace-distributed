@@ -27,12 +27,12 @@ export default function Registro() {
         setError(data.mensaje || 'No fue posible crear la cuenta.');
         return;
       }
-      // El cliente no tiene vistas en web: no se guarda la sesión, se vuelve al login con un aviso
+      // El cliente no usa este panel: no se guarda la sesión, se vuelve al login con un aviso
       // en pantalla (antes era un alert() del navegador que bloqueaba la página).
       navigate('/login', {
         state: {
           aviso:
-            'Cuenta creada. La compra y el seguimiento de pedidos se hacen desde la app móvil.',
+            'Cuenta creada. Para comprar, entra con ella en la tienda del cliente (enlace de abajo).',
         },
       });
     } catch (err) {
@@ -49,7 +49,7 @@ export default function Registro() {
         className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-8 shadow-sm"
       >
         <h1 className="mb-1 text-2xl font-bold text-slate-900">Crear cuenta</h1>
-        <p className="mb-6 text-sm text-slate-600">Cuenta de cliente. Las compras se hacen desde la app móvil.</p>
+        <p className="mb-6 text-sm text-slate-600">Cuenta de cliente. Las compras se hacen en la tienda del cliente (/app/).</p>
 
         <label htmlFor="reg-nombre" className="mb-1 block text-sm font-medium text-slate-700">
           Nombre

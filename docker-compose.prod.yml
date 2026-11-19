@@ -1,8 +1,9 @@
-# Despliegue completo: PostgreSQL + API + Web (nginx) + Mailpit (correo de pruebas).
+# Despliegue completo: PostgreSQL + API + Web (nginx) + tienda del cliente + Mailpit (correo de pruebas).
 #
 #   cp .env.example .env        # y completa JWT_SECRET y DB_PASSWORD
 #   docker compose -f docker-compose.prod.yml up --build -d
-#   -> http://localhost:8080            la aplicación web
+#   -> http://localhost:8080            panel web (vendedores y administradores)
+#   -> http://localhost:8080/app/       tienda del cliente (app Flutter compilada para web)
 #   -> http://localhost:8080/api/docs   documentación de la API (Swagger)
 #   -> http://localhost:8025            bandeja de Mailpit: los correos que envía la API
 #
@@ -73,8 +74,16 @@ services:
     depends_on:
       api:
         condition: service_healthy
+      cliente:
+        condition: service_healthy
     ports:
       - "${WEB_PORT:-8080}:80"
+
+  # Tienda del cliente: la app Flutter compilada para web. No se publica: nginx (web) la
+  # sirve en /app/ del mismo sitio. La primera construcción descarga el SDK de Flutter (~1 GB).
+  cliente:
+    build: ./mobile
+    restart: unless-stopped
 
   # Servidor SMTP de pruebas: recibe los correos de la API y los muestra en una bandeja web.
   # No los entrega a nadie de verdad. La API no depende de él para funcionar: si no está, el

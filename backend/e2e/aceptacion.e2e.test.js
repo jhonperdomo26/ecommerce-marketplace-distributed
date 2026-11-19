@@ -78,6 +78,16 @@ describe('CA-01 · Despliegue disponible', () => {
     }
   });
 
+  (WEB ? test : test.skip)('la tienda del cliente (Flutter web) se sirve en /app/', async () => {
+    const r = await http('GET', '/app/');
+    expect(r.status).toBe(200);
+    expect(r.texto).toMatch(/flutter_bootstrap\.js/);
+    expect(r.texto).toMatch(/<base href="\/app\/">/);
+    const js = await http('GET', '/app/main.dart.js');
+    expect(js.status).toBe(200);
+    expect(r.headers.get('x-content-type-options')).toBe('nosniff');
+  });
+
   (WEB ? test : test.skip)('la web reenvía /api a la API y añade cabeceras de seguridad', async () => {
     const r = await http('GET', '/api/productos');
     expect(r.status).toBe(403);

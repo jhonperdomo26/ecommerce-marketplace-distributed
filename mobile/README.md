@@ -4,7 +4,24 @@ App del **cliente**, que consume la misma API central. Corresponde a la
 **Sección 5** y al **Paso 4** del Manual Técnico, ampliada con catálogo, compra y
 reseñas.
 
-## Requisitos
+## Versión web (recomendada para la demo)
+
+`docker-compose.prod.yml` compila esta misma app para web (servicio `cliente`, ver
+`Dockerfile`) y la publica en **`/app/`** del sitio: `http://localhost:8080/app/` en local o
+`https://<dominio>/app/` en la nube. No hace falta instalar Flutter ni un emulador. En web, la
+app usa el mismo origen desde el que se sirve para llamar a `/api` (`lib/config.dart`).
+
+Compilarla a mano (con Flutter instalado):
+
+```bash
+cd mobile
+flutter create --platforms web .
+flutter build web --release --base-href /app/ --no-web-resources-cdn
+```
+
+Limitación: la sesión vive en memoria, así que recargar la página vuelve al login.
+
+## Requisitos (emulador)
 
 - SDK de Flutter (3.x) y un emulador configurado (Android Studio o Xcode)
 - El backend en ejecución
