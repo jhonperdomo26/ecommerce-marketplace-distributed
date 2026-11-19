@@ -2,7 +2,8 @@
 
 Alcance: backend + frontend web. La app móvil queda fuera de esta entrega. El informe completo
 (métricas, gráficos, hallazgos y plan de mitigación) está en el documento «Fase 4 — Informe de
-Aseguramiento de Calidad»; este archivo es la guía del repositorio.
+Aseguramiento de Calidad» (versión 1.1 del 18 de noviembre de 2026, en `docs/fase4/`); este archivo es la
+guía del repositorio.
 
 ## Qué se agregó
 
@@ -28,5 +29,5 @@ Frontend: etiquetas de formulario asociadas, sesión vencida → login, precio f
 `JWT_SECRET` (obligatorio y ≥ 32 caracteres en producción), `LOGIN_RATE_LIMIT`, `REGISTRO_RATE_LIMIT`,
 `CHAT_RATE_LIMIT`, `TRUST_PROXY`. Ver `backend/.env.example`.
 
-> **Despliegue:** en producción la API ya **no arranca** sin `JWT_SECRET` propio. Defínalo en
-> `docker-compose`/variables del servidor antes de la Fase 5.
+> **Despliegue:** en producción la API **no arranca** sin `JWT_SECRET` propio. **(v1.1)** Cumplido en la
+> Fase 5: el despliegue en Azure lo define en `.env` (P-01 cerrado en el informe).
