@@ -65,9 +65,14 @@ docker compose -f docker-compose.prod.yml -f docker-compose.nube.yml logs -f cad
 ```
 
 Queda disponible en:
-- `https://20-30-40-50.sslip.io` — la aplicación
+- `https://20-30-40-50.sslip.io` — panel web (vendedores y administradores)
+- `https://20-30-40-50.sslip.io/app/` — tienda del cliente (la app Flutter compilada para web; se
+  usa desde el navegador del celular o del PC)
 - `https://20-30-40-50.sslip.io/api/docs` — Swagger
 - `https://correo.20-30-40-50.sslip.io` — bandeja de Mailpit (pide `MAILPIT_UI_AUTH`)
+
+La primera construcción tarda más (unos minutos extra): la imagen `cliente` descarga el SDK de
+Flutter (~1 GB) y compila la app para web. Las siguientes reutilizan la caché de Docker.
 
 ## 5. Validar (pruebas de aceptación) y asegurar
 
