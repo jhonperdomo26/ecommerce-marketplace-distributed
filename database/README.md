@@ -22,7 +22,7 @@ docker compose up -d
 Esto levanta:
 
 - **PostgreSQL** en `localhost:5432` (usuario `postgres`, contraseña `postgres`,
-  base `comercio_electronico`). Los dos scripts `.sql` se ejecutan
+  base `comercio_electronico`). Los tres scripts `.sql` se ejecutan
   automáticamente la primera vez.
 - **pgAdmin** en `http://localhost:5050` (correo `admin@admin.com`,
   contraseña `admin`).
