@@ -1,5 +1,12 @@
 # Fase 3 — Asistente virtual (chatbot por reglas)
 
+Versión 1.1, 18 de noviembre de 2026. Autores: Jhon Jairo Perdomo Perdomo, Julián Andrés Silva Morales y
+Juan Vidarte. Lo nuevo de la versión 1.1 va marcado con **(v1.1)**.
+
+**Alcance de esta entrega (v1.1):** se entrega y valida el chat de la web (vendedor y administrador),
+que cubre el requisito RF8 de la Fase 1. La pestaña de la app móvil existe en el repositorio, pero queda
+fuera de esta entrega; las intenciones de cliente se prueban por la API.
+
 Módulo de chat integrado en la web (vendedor y administrador) y en la app móvil
 (cliente), con su lógica de negocio conectada al backend. Usa un **motor de
 reglas deterministas** (árbol de decisión por intenciones), una de las dos
@@ -9,7 +16,7 @@ opciones que plantea la actividad; no depende de ninguna API externa de IA.
 
 | Criterio | Reglas deterministas | API de IA |
 | -------- | -------------------- | --------- |
-| Respuesta sobre datos reales (estado de un pedido, stock) | Exacta: sale de una consulta SQL | Requiere dar acceso a datos al modelo |
+| Respuesta sobre datos reales (estado de un pedido, stock) | Exacta: sale de una consulta a la base (TypeORM) **(v1.1)** | Requiere dar acceso a datos al modelo |
 | Fuga de datos entre usuarios | Imposible por construcción (ver «Seguridad») | Hay que contenerla con instrucciones |
 | Pruebas automatizadas | Deterministas y rápidas | No reproducibles |
 | Costo y claves | Ninguno | Clave, cuota y red externa |
@@ -25,7 +32,7 @@ La limitación (preguntas fuera de las intenciones) se trata en «Mejoras».
 | ------- | --------------- |
 | `backend/src/chat/tipos.ts` | Tipos y el contrato `ChatDatos` (acceso a datos) |
 | `backend/src/chat/motor.ts` | Motor de reglas: normalización, intenciones, puntaje, respuestas |
-| `backend/src/chat/datos.ts` | Implementación de `ChatDatos` sobre PostgreSQL |
+| `backend/src/chat/datos.ts` | Implementación de `ChatDatos` sobre PostgreSQL con TypeORM **(v1.1)** |
 | `backend/src/controllers/chat.controller.ts` | Valida la entrada y llama al motor con la identidad del token |
 | `backend/src/routes/chat.routes.ts` | `POST /api/chat` con `verificarToken` y límite de tasa |
 | `frontend/src/components/ChatWidget.jsx` | Panel de chat flotante (se muestra desde `Layout.jsx`) |
@@ -56,11 +63,11 @@ chat con toda la información que hace falta.
 
 ```json
 // petición
-{ "mensaje": "¿cuál es el estado del pedido #12?" }
+{ "mensaje": "¿cuál es el estado del pedido #1?" }
 
 // respuesta 200
 {
-  "respuesta": "Pedido #12: Camisa Azul (x2)\nEstado: enviado\nFecha: 12/11/2026\nLa tienda ya despachó tu pedido.",
+  "respuesta": "Pedido #1: Teclado mecánico (x2)\nEstado: pendiente\nFecha: 18/11/2026\nTu pedido quedó registrado y está a la espera de que la tienda lo procese.",
   "intencion": "estado_pedido",
   "opciones": [{ "texto": "Mis pedidos", "valor": "mis pedidos" }]
 }
@@ -69,6 +76,7 @@ chat con toda la información que hace falta.
 | Código | Cuándo |
 | ------ | ------ |
 | 400 | `mensaje` ausente, vacío, no es texto o supera 300 caracteres; también token inválido |
+| 401 | Usuario desactivado o inexistente **(v1.1)** |
 | 403 | Sin token |
 | 429 | Más de 60 mensajes por minuto desde una IP (`CHAT_RATE_LIMIT` lo cambia) |
 | 500 | Error interno (mensaje genérico, detalle solo en el log del servidor) |
@@ -83,13 +91,13 @@ chat con toda la información que hace falta.
 | `ayuda` | «ayuda», «qué puedes hacer» |
 | `despedida` | «gracias», «adiós» |
 | `humano` | «quiero hablar con un asesor» (indica que el chat no conecta con personas) |
-| `buscar_producto` | «¿cuánto cuestan los zapatos?», «hay stock de camisa», «catálogo» |
+| `buscar_producto` | «¿cuánto cuesta el teclado?», «hay stock de monitor», «catálogo» **(v1.1: ejemplos con productos de la semilla)** |
 
 **Cliente**
 
 | Intención | Ejemplos de frase | Fuente |
 | --------- | ----------------- | ------ |
-| `estado_pedido` | «estado del pedido #12», «¿dónde está mi compra?» | Consulta (solo sus pedidos) |
+| `estado_pedido` | «estado del pedido #1», «¿dónde está mi compra?» | Consulta (solo sus pedidos) |
 | `mis_pedidos` | «mis pedidos», «mi historial» | Consulta (solo sus pedidos) |
 | `como_comprar` | «¿cómo compro?» | Texto fijo |
 | `como_resenar` | «quiero calificar mi compra» | Texto fijo |
@@ -129,7 +137,7 @@ cuenta. Si se implementan esas funciones, hay que actualizar esos textos.
   incluye `cliente_id = <su id>` y responde «no encontré».
 - **Intenciones por rol.** Un cliente que escribe «stock bajo» o «resumen» no
   activa las intenciones de vendedor o administrador.
-- **Inyección SQL.** Solo se usan consultas parametrizadas; además, el mensaje se
+- **Inyección SQL.** Solo se usan consultas parametrizadas de TypeORM **(v1.1)**; además, el mensaje se
   normaliza y los términos de búsqueda quedan limitados a `[a-z0-9]`. Los
   comodines `%` y `_` se escapan en `LIKE`.
 - **Entrada acotada**: máximo 300 caracteres, límite de 60 mensajes por minuto por
@@ -156,14 +164,35 @@ curl -X POST http://localhost:3000/api/chat \
 
 - **Web:** inicia sesión como `vendedor1@tutienda.com` o `admin@tutienda.com` y
   pulsa **Asistente** (abajo a la derecha).
+- **Guion para la demostración (v1.1)**, con los datos de la semilla:
+
+  | Usuario | Mensaje | Qué responde |
+  | ------- | ------- | ------------ |
+  | `vendedor1@tutienda.com` | «hola» | Saludo y menú de vendedor |
+  | `vendedor1@tutienda.com` | «pedidos pendientes» | Conteo por estado de su tienda (1 pendiente, 1 entregado) |
+  | `vendedor1@tutienda.com` | «¿cuánto cuesta el teclado?» | Teclado mecánico, precio y stock |
+  | `vendedor2@tutienda.com` | «stock bajo» | Escritorio, 5 unidades |
+  | `admin@tutienda.com` | «resumen» | Conteos de tiendas, usuarios, productos y pedidos |
+  | `admin@tutienda.com` | «mis pedidos» | «No entendí» y su menú: las intenciones de cliente no aplican a su rol |
+
+  En la VM de Azure las contraseñas de la semilla se cambiaron: usar las nuevas.
 - **App móvil:** inicia sesión como `cliente@correo.com` y abre la pestaña **Asistente**.
 - **Pruebas automatizadas:** `cd backend && npm test` (necesita PostgreSQL, igual
   que el resto de la suite). Solo las del chat: `npm test -- chat`.
 
+## Verificación (v1.1)
+
+Corrida del 18 de noviembre de 2026 con PostgreSQL 16 y la semilla de demostración:
+
+- `npm test -- chat`: 2 suites, 81 pruebas en verde (motor de reglas sin base y endpoint con base).
+- Prueba en vivo de `POST /api/chat` con vendedor, administrador y cliente: cada mensaje del guion
+  anterior devolvió la intención y los datos esperados.
+- Trazabilidad: cubre el requisito RF8 de la especificación de la Fase 1 (v1.1).
+
 ## Relación con la arquitectura distribuida (Fase 1)
 
-En la especificación de arquitectura el asistente es el **sexto servicio**, que
-consulta a Pedidos y Catálogo por REST. Aquí vive dentro del backend actual para
+En la especificación de arquitectura (v1.1) el Asistente es uno de los **cinco
+servicios**, sin base propia, que consulta a Pedidos, Catálogo e Identidad por REST. Aquí vive dentro del backend actual para
 no adelantar la separación en servicios (Fase 2), pero ya está preparado:
 
 - `motor.ts` no importa Express ni `pg`; solo depende de la interfaz `ChatDatos`.
