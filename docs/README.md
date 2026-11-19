@@ -18,6 +18,12 @@ el envío de notificaciones ya desacoplado de la operación de negocio. La extra
 cola de mensajes no están implementadas. La sección 12 de la especificación relaciona cada requisito con
 su código y su prueba.
 
+## Guía de entendimiento (uso interno)
+
+[`Guia_de_Entendimiento.md`](Guia_de_Entendimiento.md) resume cada fase en lenguaje sencillo para el equipo. Hay una versión en PDF por integrante en
+`guia_entendimiento/` (Jhon: Fase 1; Julián: Fases 3 y 4; Juan Vidarte: Fases 2 y 5).
+**No es un entregable**: lo que se presenta son los documentos oficiales de la tabla anterior.
+
 ## Documentos de la actividad anterior
 
 Estos archivos vienen del repositorio de partida y se conservan como antecedente; no son entregables de

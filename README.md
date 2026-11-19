@@ -94,7 +94,8 @@ npm run dev
 Web en `http://localhost:5173`. Inicia sesión como **vendedor**
 (`vendedor1@tutienda.com` / `Password123`) para gestionar productos, pedidos y
 ver reseñas, o como **administrador** (`admin@tutienda.com`) para el panel de
-tiendas y usuarios. El **cliente** no tiene vistas en web: usa la app móvil.
+tiendas y usuarios. El **cliente** usa la app Flutter: en el emulador o, ya compilada
+para web, en `http://localhost:8080/app/` con `docker-compose.prod.yml` (servicio `cliente`).
 
 ### 4. App móvil
 
