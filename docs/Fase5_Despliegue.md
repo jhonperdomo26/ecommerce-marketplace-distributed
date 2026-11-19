@@ -85,6 +85,9 @@ BASE_URL=http://localhost:8080 E2E_WEB=1 npm run test:e2e
   (ver «Validar»).
 - **Cambios posteriores, probados fuera de Docker:** TypeORM, notificaciones, Swagger, filtros de pedidos y
   la nueva interfaz. Backend: 301 pruebas en verde. Suite E2E contra la API compilada y un Mailpit real: 31 en
-  verde (las 2 de nginx solo corren en Compose). Hay que reconstruir (`up --build -d`) y volver a correr la
-  suite en Compose para cerrarlo.
+  verde (las 2 de nginx solo corren en Compose).
+- **Cerrado en la nube (v1.1, 18 de noviembre de 2026):** con la versión final se reconstruyeron las imágenes
+  en la máquina virtual de Azure y la suite pasó completa, **33 de 33**. Despliegue en
+  https://158-158-107-192.sslip.io; detalles en `docs/fase5/Despliegue_Nube.md` y en la sección 3.1 del
+  manual técnico.
 - Las imágenes de Node pasaron de la 20 (fin de soporte en abril de 2026) a la 22.

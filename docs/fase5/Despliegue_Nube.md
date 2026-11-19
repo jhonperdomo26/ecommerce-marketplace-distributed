@@ -30,7 +30,7 @@ Al crear la VM:
 
 ```bash
 ssh usuario@20.30.40.50
-git clone https://github.com/<organizacion>/<repositorio>.git ecommerce
+git clone https://github.com/jhonperdomo26/ecommerce-marketplace-distributed.git ecommerce
 cd ecommerce
 bash despliegue/preparar_vm.sh      # instala Docker, agrega swap si hace falta y abre puertos
 exit                                # volver a entrar para usar docker sin sudo
