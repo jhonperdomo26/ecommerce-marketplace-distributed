@@ -9,13 +9,14 @@ administrador); la app móvil está en el repositorio pero queda fuera.
 | 2. Construcción del núcleo | Repositorio con el MVP funcional, documentación de API (Swagger/OpenAPI) y scripts de base de datos | [`fase2/README.md`](fase2/README.md) (mapa del código), [`fase2/openapi.json`](fase2/openapi.json), `database/` | Entregado (ver nota) |
 | 3. Automatización conversacional | Módulo de chat integrado en la interfaz con su lógica conectada al backend | [`Fase3_Chatbot.md`](Fase3_Chatbot.md), `backend/src/chat/`, `frontend/src/components/ChatWidget.jsx` | Entregado |
 | 4. Aseguramiento de calidad | Informe de pruebas con métricas, gráficos de rendimiento y plan de mitigación | [`fase4/Informe_Aseguramiento_Calidad.pdf`](fase4/Informe_Aseguramiento_Calidad.pdf) (también `.docx`), [`fase4/graficos/`](fase4/graficos/), [`Fase4_Calidad.md`](Fase4_Calidad.md) | Entregado |
-| 5. Despliegue y validación final | Software desplegado y operativo, manual técnico, manual de usuario y presentación | [`fase5/Manual_Tecnico.pdf`](fase5/Manual_Tecnico.pdf) (también `.docx`), [`fase5/Manual_Usuario_Web.pdf`](fase5/Manual_Usuario_Web.pdf), [`fase5/Presentacion_Defensa.pdf`](fase5/Presentacion_Defensa.pdf), [`fase5/capturas/`](fase5/capturas/), [`Fase5_Despliegue.md`](Fase5_Despliegue.md) (local), [`fase5/Despliegue_Nube.md`](fase5/Despliegue_Nube.md) (nube), `docker-compose.prod.yml`, `docker-compose.nube.yml` | Local listo; falta desplegar en la nube y la corrida final de pruebas |
+| 5. Despliegue y validación final | Software desplegado y operativo, manual técnico, manual de usuario y presentación | [`fase5/Manual_Tecnico.pdf`](fase5/Manual_Tecnico.pdf) (también `.docx`), [`fase5/Manual_Usuario_Web.pdf`](fase5/Manual_Usuario_Web.pdf), [`fase5/Presentacion_Defensa.pdf`](fase5/Presentacion_Defensa.pdf) (fuente editable: `fase5/Presentacion_Defensa.html`), [`fase5/capturas/`](fase5/capturas/), [`Fase5_Despliegue.md`](Fase5_Despliegue.md) (local), [`fase5/Despliegue_Nube.md`](fase5/Despliegue_Nube.md) (nube), `docker-compose.prod.yml`, `docker-compose.nube.yml` | Entregado: desplegado en Azure (https://158-158-107-192.sslip.io), 33 de 33 pruebas E2E en verde |
 
-**Nota sobre las fases 1 y 2.** La especificación de la Fase 1 propone una arquitectura de cinco
-servicios con API Gateway y RabbitMQ, y una ruta de migración paso a paso desde el monolito. Lo
+**Nota sobre las fases 1 y 2.** La especificación de la Fase 1 (versión 1.1) propone una arquitectura de cinco
+servicios (Identidad, Catálogo, Pedidos, Notificaciones y Asistente) con API Gateway y RabbitMQ, y una ruta de migración paso a paso desde el monolito. Lo
 implementado es la base de esa ruta: una API modular en un solo servicio, contenerizada con Docker, con
 el envío de notificaciones ya desacoplado de la operación de negocio. La extracción de servicios y la
-cola de mensajes no están implementadas.
+cola de mensajes no están implementadas. La sección 12 de la especificación relaciona cada requisito con
+su código y su prueba.
 
 ## Documentos de la actividad anterior
 
@@ -29,4 +30,6 @@ El plan de pruebas que ejecuta la Fase 4 es `Plan_de_Pruebas_Evaluacion_de_Calid
 ## Versiones editables
 
 Los documentos se redactaron como documentos compartidos de Claude; los PDF y DOCX de esta carpeta son
-copias exportadas el 16 de noviembre de 2026. Si se editan los originales, hay que volver a exportarlos.
+copias exportadas el 16 de noviembre de 2026, salvo la especificación de la Fase 1, el informe de la Fase 4 y los manuales
+de la Fase 5 (versión 1.1, exportados el 18 de noviembre de 2026). La presentación se genera desde
+`fase5/Presentacion_Defensa.html` (abrirla en Chrome e imprimir a PDF). Si se editan los originales, hay que volver a exportarlos.

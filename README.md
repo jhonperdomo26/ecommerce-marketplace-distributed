@@ -44,7 +44,7 @@ Autores: Juan Andrés Vidarte Dussan · Jhon Jairo Perdomo Perdomo · Julián An
 | `backend/`    | API RESTful (Sección 3 y Paso 2 del manual) + endpoints de negocio.  |
 | `frontend/`   | Web de vendedor y administrador (Sección 4 y Paso 3).            |
 | `mobile/`     | App del cliente en Flutter (Sección 5 y Paso 4).                 |
-| `docs/`       | Copia del Manual Técnico original.                               |
+| `docs/`       | Entregables de las fases 1 a 5 (índice en `docs/README.md`) y documentos de la actividad anterior. |
 | `docker-compose.yml` | PostgreSQL + pgAdmin para desarrollo local.               |
 
 Cada subproyecto tiene su propio `README.md` con instrucciones detalladas.
@@ -142,7 +142,8 @@ registro, panel de administrador, reseñas y cambio de estado de pedidos) y el
 - [x] **5.3** Suite **Jest + Supertest** (`backend/test/`, `cd backend && npm test`):
       `verificarToken`, `actualizarEstadoPedido` con el **caso 5.2** como prueba
       permanente, `crearPedido` (incl. stock insuficiente → rollback), `crearResena`
-      y pruebas de las restricciones `CHECK`/`UNIQUE` de la BD. **30 pruebas.**
+      y pruebas de las restricciones `CHECK`/`UNIQUE` de la BD. Hoy la suite tiene **301 pruebas** (seguridad, chat,
+      notificaciones y OpenAPI incluidas).
       Prueba de **carga con k6** sobre `POST /api/pedidos`
       (`backend/load/`, ver [`backend/load/README.md`](backend/load/README.md)).
 - [x] **Prueba móvil (Flutter)** del Paso 5.1: automatizada en
@@ -156,11 +157,12 @@ registro, panel de administrador, reseñas y cambio de estado de pedidos) y el
 - [x] **Fase 4 — Aseguramiento de calidad (web)**: suite de rendimiento k6 (REN-01…06), suite de seguridad
       OWASP en Jest, evaluación heurística y mitigaciones. Ver [`docs/Fase4_Calidad.md`](docs/Fase4_Calidad.md).
 - **Entregables de todas las fases:** índice en [`docs/README.md`](docs/README.md).
-- [x] **Fase 2 — Núcleo (completado)**: persistencia con **TypeORM** (`backend/src/entidades`, `backend/src/db.ts`),
+- [x] **Fase 2 — Núcleo (completado, ver [`docs/fase2/README.md`](docs/fase2/README.md))**: persistencia con **TypeORM** (`backend/src/entidades`, `backend/src/db.ts`),
       documentación **Swagger/OpenAPI** en `/api/docs` y servicio externo de **notificaciones por correo**
       (`backend/src/servicios/notificaciones.ts`, Mailpit en el despliegue).
 - [x] **Fase 5 — Despliegue y validación final (web)**: `docker-compose.prod.yml`, Dockerfiles y suite E2E
       (`backend/e2e`, 33 pruebas). Ver [`docs/Fase5_Despliegue.md`](docs/Fase5_Despliegue.md).
+      Publicado en Azure: https://158-158-107-192.sslip.io (Swagger en `/api/docs`); 33 de 33 pruebas E2E en verde.
 - [ ] **5.1 (web) / 5.2** El manual las plantea como verificación **manual**
       (Postman + navegador). El fondo de la 5.2 ya queda cubierto de forma
       automática dentro de 5.3 (`test/pedidos.test.ts`); falta, si se quiere,
